@@ -1,0 +1,12 @@
+MCU+Image
+.settings
+UserFiles
+targetConfigs
+.ccsproject
+.cproject
+.project
+cc32xxsf_tirtos7.lds
+image.syscfg
+bma2xxdrv.h
+bma2xxdrv.c
+out_of_box.syscfg

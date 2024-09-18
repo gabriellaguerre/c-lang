@@ -10,3 +10,4 @@ image.syscfg
 bma2xxdrv.h
 bma2xxdrv.c
 out_of_box.syscfg
+

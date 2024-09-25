@@ -6,17 +6,22 @@
 #include <uart_term.h>
 #include "ti_drivers_config.h"
 #include <unistd.h>
-#include "uart_term.h"
+#include "uart_ant.h"
 #include "tcp_server.h"
 #include <pthread.h> // Include pthread header
 
-
 #define RS485_SERVER_PORT 5000
-#define RS485_BUFFER_SIZE 1024 //up from 256
+#define RS485_BUFFER_SIZE 512 //up from 256
 
 extern UART2_Handle uartRS485Handle;
 
-
+// Function to send debug messages via RS485
+void sendRS485DebugMessage(const char *debugMessage) {
+    int status = UART2_write(uartRS485Handle, debugMessage, strlen(debugMessage), NULL);
+    if (status < 0) {
+        UART_PRINT("Failed to send debug message via RS485\n");
+    }
+}
 
 int setupTCPServer() {
     int serverSock;
@@ -24,11 +29,12 @@ int setupTCPServer() {
     SlSockAddrIn_t serverAddr;
     int nonBlocking = 1;
 
-//    UART_PRINT("IN SETUP TCP SERVER FUNCTION ...\n");
+    // Debug message
+    sendRS485DebugMessage("Setting up TCP server...\n");
 
     serverSock = sl_Socket(SL_AF_INET, SL_SOCK_STREAM, 0);
     if (serverSock < 0) {
-        Report("Error creating socket: %d\n", serverSock);
+        sendRS485DebugMessage("Error creating socket\n");
         return serverSock;
     }
 
@@ -39,21 +45,21 @@ int setupTCPServer() {
     status = sl_Bind(serverSock, (SlSockAddr_t *)&serverAddr, sizeof(SlSockAddrIn_t));
     if (status < 0) {
         sl_Close(serverSock);
-        Report("Error binding socket: %d\n", status);
+        sendRS485DebugMessage("Error binding socket\n");
         return status;
     }
 
     status = sl_Listen(serverSock, 0);
     if (status < 0) {
         sl_Close(serverSock);
-        Report("Error listening on socket: %d\n", status);
+        sendRS485DebugMessage("Error listening on socket\n");
         return status;
     }
 
     status = sl_SetSockOpt(serverSock, SL_SOL_SOCKET, SL_SO_NONBLOCKING, &nonBlocking, sizeof(nonBlocking));
     if (status < 0) {
         sl_Close(serverSock);
-        Report("Error setting socket to non-blocking: %d\n", status);
+        sendRS485DebugMessage("Error setting socket to non-blocking mode\n");
         return status;
     }
 
@@ -76,47 +82,46 @@ void *rs485ServerTask(void *pvParameter) {
             continue;
         }
 
-        UART_PRINT("Client connected: %d\n", clientSock);
+        sendRS485DebugMessage("Client connected\n");
 
         // Continuous communication with the client
         while (1) {
             // Receive data from the client
             status = sl_Recv(clientSock, buffer, RS485_BUFFER_SIZE, 0);
             if (status > 0) {
-                UART_PRINT("Received from client: %s\n", buffer);
+                sendRS485DebugMessage("Received data from client\n");
 
                 // Forward data to UART (RS485)
                 status = UART2_write(uartRS485Handle, buffer, status, NULL);
                 if (status > 0) {
-                    UART_PRINT("Data sent to UART (RS485): %s\n", buffer);
+                    sendRS485DebugMessage("Data sent to RS485\n");
                 } else {
-                    UART_PRINT("UART2_write() failed: %d\n", status);
+                    sendRS485DebugMessage("UART2_write failed\n");
                 }
 
                 // Read response from UART (RS485)
                 int bytesRead = UART2_read(uartRS485Handle, buffer, RS485_BUFFER_SIZE, NULL);
                 if (bytesRead > 0) {
-                    UART_PRINT("Data received from UART (RS485): %s\n", buffer);
+                    sendRS485DebugMessage("Data received from RS485\n");
 
                     // Forward response back to the client
                     status = sl_Send(clientSock, buffer, bytesRead, 0);
                     if (status < 0) {
-                        UART_PRINT("Failed to send data to client: %d\n", status);
+                        sendRS485DebugMessage("Failed to send data back to client\n");
                     }
                 } else {
-                    UART_PRINT("UART2_read() failed: %d\n", status);
+                    sendRS485DebugMessage("UART2_read failed\n");
                 }
             } else if (status == 0) {
                 // Connection closed by the client
-                sl_Close(clientSock);
-                UART_PRINT("Client disconnected: %d\n", clientSock);
-                break;
+                sendRS485DebugMessage("Client disconnected\n");
+                continue;
             } else if (status == SL_ERROR_BSD_EAGAIN) {
                 // No data available, continue waiting
                 usleep(10000);  // Sleep for 10ms
             } else {
                 // Error occurred
-                UART_PRINT("Error receiving data\n");
+                sendRS485DebugMessage("Error receiving data from client\n");
                 sl_Close(clientSock);
                 break;
             }

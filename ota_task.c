@@ -34,7 +34,6 @@
 //
 //! \addtogroup out_of_box
 //! @{
-//
 //*****************************************************************************
 
 /* standard includes */
@@ -49,7 +48,8 @@
 
 /* TI-DRIVERS Header files */
 #include <ti_drivers_config.h>
-#include <uart_term.h>
+//#include <uart_term.h>
+#include "uart_ant.h"
 
 /* Example/Board Header files */
 #include "ota_task.h"
@@ -57,30 +57,30 @@
 #include "out_of_box.h"
 
 #define OTA_REPORT_SERVER_PORT       (5432)
-#define OTA_REPORT_TIMEOUT           (10)        /* in mSec */
-#define OTA_NB_TIMEOUT               (20)    /* in mSec */
-#define OTA_BLOCKED_TIMEOUT          (20)        /* in seconds */
-#define OTA_NUM_OF_ACCEPT_TRIALS     (1000 / OTA_NB_TIMEOUT * \
-                                      OTA_BLOCKED_TIMEOUT)
-#define OTA_NUM_OF_MAILBOX_TRIALS    (1000 / OTA_REPORT_TIMEOUT * \
-                                      OTA_BLOCKED_TIMEOUT)
+#define RS485_SERVER_PORT            (5000)    // +++++ RS485 port +++++
+#define OTA_REPORT_TIMEOUT           (10)      /* in mSec */
+#define OTA_NB_TIMEOUT               (20)      /* in mSec */
+#define RS485_NB_TIMEOUT             (20)      // +++++ Timeout for RS485 +++++
+#define OTA_BLOCKED_TIMEOUT          (20)      /* in seconds */
+#define OTA_NUM_OF_ACCEPT_TRIALS     (1000 / OTA_NB_TIMEOUT * OTA_BLOCKED_TIMEOUT)
+#define RS485_NUM_OF_ACCEPT_TRIALS   (1000 / RS485_NB_TIMEOUT * OTA_BLOCKED_TIMEOUT) // +++++ RS485 trials +++++
+#define OTA_NUM_OF_MAILBOX_TRIALS    (1000 / OTA_REPORT_TIMEOUT * OTA_BLOCKED_TIMEOUT)
 
 #define OTA_PROGRESS_BAR_STR_LEN     (4)
 #define HTTP_HEADER_METADATA_STR_LEN (105)
 
-extern int snprintf(char *_string,
-                    size_t _n,
-                    const char *_format,
-                    ...);
+extern int snprintf(char *_string, size_t _n, const char *_format, ...);
 
 /****************************************************************************
                       GLOBAL VARIABLES
 ****************************************************************************/
 // data buffer used to send messages reporting on ota progress
-uint8_t gPayloadData[32];    
+uint8_t gPayloadData[32];
 uint8_t gMetadataResponse[512];
+uint8_t rs485DataBuffer[512];    // +++++ RS485 data buffer +++++
+extern UART2_Handle uartRS485Handle;
 
-//****************************************************************************
+//*****************************************************************************
 //                            MAIN FUNCTION
 //****************************************************************************
 
@@ -92,14 +92,14 @@ uint8_t gMetadataResponse[512];
 //!
 //! \return None
 //!
-//****************************************************************************
+//*****************************************************************************
 void * otaTask(void *pvParameter)
 {
     uint8_t otaProgressBar, mailboxItems;
     uint16_t acceptTrials, recvTrials, mailboxTrials;
 
-    int16_t sock;
-    int16_t newsock = -1;
+    int16_t sock, rs485Sock;    // +++++ RS485 socket +++++
+    int16_t newsock = -1, rs485NewSock = -1;  // +++++ RS485 new client socket +++++
     int32_t status;
     int32_t nonBlocking = 0;
     int16_t addrSize;
@@ -110,14 +110,13 @@ void * otaTask(void *pvParameter)
     mq_attr attr;
 
     SlSockAddrIn_t sAddr;
-    SlSockAddrIn_t sLocalAddr;
+    SlSockAddrIn_t sLocalAddr, rs485Addr;    // +++++ RS485 address +++++
 
     /* initializes mailbox for ota report server */
     attr.mq_maxmsg = 50;         /* queue size */
     attr.mq_msgsize = sizeof(uint8_t);        /* Size of message */
     LinkLocal_ControlBlock.reportServerMQueue =
-        mq_open("report server msg q", O_CREAT, 0,
-                &attr);
+        mq_open("report server msg q", O_CREAT, 0, &attr);
     if(((int)LinkLocal_ControlBlock.reportServerMQueue) <= 0)
     {
         UART_PRINT("[Link local task] could not create msg queue\n\r");
@@ -176,6 +175,44 @@ ota_task_restart:
         goto ota_task_restart;
     }
 
+// +++++++++++++++++++++++++++++++++++++++++++++++ RS485 server setup starts ++++++++++++++++++++++++++++++++++++++++
+    rs485Addr.sin_family = SL_AF_INET;
+    rs485Addr.sin_port = sl_Htons((uint16_t)RS485_SERVER_PORT);
+    rs485Addr.sin_addr.s_addr = SL_INADDR_ANY;
+
+    rs485Sock = sl_Socket(rs485Addr.sin_family, SL_SOCK_STREAM, 0);
+    if(rs485Sock < 0)
+    {
+        UART_PRINT("[RS485 task] Error opening socket, %d \n\r", rs485Sock);
+        goto ota_task_restart;
+    }
+
+    status = sl_Bind(rs485Sock, (SlSockAddr_t *)&rs485Addr, addrSize);
+    if(status < 0)
+    {
+        UART_PRINT("[RS485 task] Error binding socket, error %d \n\r", status);
+        sl_Close(rs485Sock);
+        goto ota_task_restart;
+    }
+
+    status = sl_Listen(rs485Sock, 0);
+    if(status < 0)
+    {
+        UART_PRINT("[RS485 task] Error listening on socket, error %d \n\r", status);
+        sl_Close(rs485Sock);
+        goto ota_task_restart;
+    }
+
+    status = sl_SetSockOpt(rs485Sock, SL_SOL_SOCKET, SL_SO_NONBLOCKING, &nonBlocking,
+                           sizeof(nonBlocking));
+    if(status < 0)
+    {
+        UART_PRINT("[RS485 task] Error setting socket as non-blocking, error %d \n\r", status);
+        sl_Close(rs485Sock);
+        goto ota_task_restart;
+    }
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++ RS485 server setup ends +++++++++++++++++++++++++++++++++++++
+
     while(1)
     {
         otaProgressBar = 0;
@@ -190,6 +227,7 @@ ota_task_restart:
         {
 ota_task_accept_start:
             newsock = SL_ERROR_BSD_EAGAIN;
+            rs485NewSock = SL_ERROR_BSD_EAGAIN;    // +++++ RS485 socket accept start +++++
 
             /* wait for client */
             while(newsock < 0)
@@ -201,8 +239,7 @@ ota_task_accept_start:
                 {
                     usleep(OTA_NB_TIMEOUT * 1000);
 
-
-                    /* increase accept counter to protect from cases were 
+                    /* increase accept counter to protect from cases were
                     connection cannot be created so OTA task would not block
                     the procedure */
                     acceptTrials++;
@@ -222,28 +259,42 @@ ota_task_accept_start:
                         "[ota report task] Error accepting client connection,"
                         "error %d \n\r",
                         newsock);
-                        /* means client failed to connect and command to driver
-                        has aborted */
-                        /* in this case, it is better to abort the report server
-                        and continue */
-                        /* with file upload to server */
-                    if((newsock == SL_RET_CODE_DEV_LOCKED) ||
-                       (newsock == SL_API_ABORTED))                                            
-                    {                                                                       
-                                                                                            
+                    /* means client failed to connect and command to driver
+                     has aborted */
+                   /* in this case, it is better to abort the report server
+                    and continue */
+                   /* with file upload to server */
+                    if((newsock == SL_RET_CODE_DEV_LOCKED) ||(newsock == SL_API_ABORTED))
+                    {
                         goto ota_task_end;
                     }
                     else
                     {
-                        goto ota_task_accept_start;
+                    goto ota_task_accept_start;
                     }
                 }
-                else        /* this case means the server accepted the incoming
-                                connection from client */
+                else
                 {
                     acceptTrials = 0;
                 }
             }
+
+// ++++++++++++++++++++++++++++++++++++ RS485 client accept starts ++++++++++++++++++++++++++++++++++++++++++++++++++
+            while(rs485NewSock < 0)
+            {
+                rs485NewSock = sl_Accept(rs485Sock, (struct SlSockAddr_t *)&sAddr, (SlSocklen_t *)&addrSize);
+                if((rs485NewSock == SL_ERROR_BSD_EAGAIN) && nonBlocking)
+                {
+                    usleep(RS485_NB_TIMEOUT * 1000);
+                    acceptTrials++;
+                    if(acceptTrials > RS485_NUM_OF_ACCEPT_TRIALS)
+                    {
+                        UART_PRINT("[RS485 task] Error accepting RS485 client connection\n\r");
+                        goto ota_task_end;
+                    }
+                }
+            }
+// ++++++++++++++++++++++++++++++++++++++++ RS485 client accept ends +++++++++++++++++++++++++++++++++++++++++++++++++
 
             /* receive some data from the peer client */
             while(1)
@@ -255,9 +306,6 @@ ota_task_accept_start:
                 {
                     usleep(OTA_NB_TIMEOUT * 1000);
 
-                    /* increase recv counter to protect from cases were no
-                    message received from client  so OTA task would not block
-                    the procedure */
                     recvTrials++;
                     if(recvTrials > OTA_NUM_OF_ACCEPT_TRIALS)
                     {
@@ -287,9 +335,26 @@ ota_task_accept_start:
                     INFO_PRINT(
                        "[ota report task] received some data from client \n\r");
                     recvTrials = 0;
-
                     break;
                 }
+
+// +++++++++++++++++++++++++++++++++++++++++++++++++ RS485 data reception +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                status = sl_Recv(rs485NewSock, rs485DataBuffer, sizeof(rs485DataBuffer), 0);
+                if(status > 0)
+                {
+                    UART2_write(uartRS485Handle, rs485DataBuffer, status, NULL);
+                    int bytesRead = UART2_read(uartRS485Handle, rs485DataBuffer, sizeof(rs485DataBuffer), NULL);
+                    if (bytesRead > 0)
+                    {
+                        sl_Send(rs485NewSock, rs485DataBuffer, bytesRead, 0);
+                    }
+                }
+                else if(status < 0)
+                {
+                    sl_Close(rs485NewSock);
+                    goto ota_task_accept_start;
+                }
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ RS485 data reception ends ++++++++++++++++++++++++++++++++++++
             }
 
             /* flush the mailbox since post may be faster than fetch */
@@ -314,14 +379,10 @@ ota_task_accept_start:
                 }
                 while(msgqRetVal >= 0);
 
-                /* increase mailbox counter to protect from cases were mailbox 
-                is stuck so OTA task would not block the procedure */
                 mailboxTrials++;
                 if(mailboxTrials > OTA_NUM_OF_MAILBOX_TRIALS)
                 {
-                    UART_PRINT(
-                        "[ota report task] Error reading from mailbox, aborting "
-"progress bar... \n\r");
+                    UART_PRINT("[ota report task] Error reading from mailbox, aborting progress bar... \n\r");
                     sl_Close(newsock);
                     mailboxTrials = 0;
 
@@ -329,12 +390,10 @@ ota_task_accept_start:
                 }
             }
 
-            if(otaProgressBar == 0xFF)         /* 0xFF means ota procedure 
-                                              failed, abort to restart socket */
+            if(otaProgressBar == 0xFF)
             {
                 UART_PRINT(
                     "[ota report task] OTA progress failed, aborting... \n\r");
-                /* prepare the http content */
                 strcpy((char *)gPayloadData, "fail");
                 contentLen = strlen((const char *)gPayloadData);
             }
@@ -342,15 +401,11 @@ ota_task_accept_start:
             {
                 UART_PRINT("[ota report task] OTA progress %d%% \n\r",
                            otaProgressBar);
-
-                /* send ota progress to client */
-                /* prepare the http content */
                 snprintf((char *)gPayloadData, OTA_PROGRESS_BAR_STR_LEN, "%d",
                          otaProgressBar);
                 contentLen = strlen((const char *)gPayloadData);
             }
-            /* send the http header metadata */
-            /* http status */
+
             snprintf(
                 (char *)gMetadataResponse, HTTP_HEADER_METADATA_STR_LEN,
                 "HTTP/1.0 200 OK\r\nContent-type: "
@@ -408,13 +463,12 @@ ota_task_accept_start:
                 }
             }
 
-            /* close the sockets for next time */
             sl_Close(newsock);
+            sl_Close(rs485NewSock);  // +++++ Close RS485 socket +++++
         }
 
 ota_task_end:
 
-        /* signal back to link local task that report is done */
         sem_post(&LinkLocal_ControlBlock.otaReportServerStopSignal);
     }
 }

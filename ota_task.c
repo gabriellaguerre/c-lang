@@ -48,8 +48,8 @@
 
 /* TI-DRIVERS Header files */
 #include <ti_drivers_config.h>
-//#include <uart_term.h>
-#include "uart_ant.h"
+#include <uart_term.h>
+//#include "uart_ant.h"
 
 /* Example/Board Header files */
 #include "ota_task.h"
@@ -95,6 +95,7 @@ extern UART2_Handle uartRS485Handle;
 //*****************************************************************************
 void * otaTask(void *pvParameter)
 {
+
     uint8_t otaProgressBar, mailboxItems;
     uint16_t acceptTrials, recvTrials, mailboxTrials;
 
@@ -127,7 +128,9 @@ void * otaTask(void *pvParameter)
     }
 
     /* waits for valid local connection - via provisioning task  */
-    sem_wait(&Provisioning_ControlBlock.provisioningConnDoneToOtaServerSignal);
+    UART_PRINT("[ota report task] INSIDE OTA TASK FUNCTION LINE 131");
+//    sem_wait(&Provisioning_ControlBlock.provisioningConnDoneToOtaServerSignal);
+    UART_PRINT("[ota report task] INSIDE OTA TASK FUNCTION LINE 133");
 
 ota_task_restart:
     /* filling the TCP server socket address */
@@ -136,23 +139,27 @@ ota_task_restart:
     sLocalAddr.sin_addr.s_addr = SL_INADDR_ANY;
 
     addrSize = sizeof(SlSockAddrIn_t);
-
+    UART_PRINT("[ota report task] Attempting to open OTA socket on port %d...\n", OTA_REPORT_SERVER_PORT);
     sock = sl_Socket(sLocalAddr.sin_family, SL_SOCK_STREAM, 0);
+
     if(sock < 0)
     {
         UART_PRINT("[ota report task] Error openning socket, %d \n\r", sock);
+//        sl_Close(sock);
+        usleep(2000000);  // Sleep for 1 second before retrying
         goto ota_task_restart;
     }
-
+    UART_PRINT("[ota report task] OTA socket opened successfully, attempting to bind...\n");
     status = sl_Bind(sock, (SlSockAddr_t *)&sLocalAddr, addrSize);
     if(status < 0)
     {
         UART_PRINT("[ota report task] Error binding socket, error %d \n\r",
                    status);
         sl_Close(sock);
+        usleep(1000000);  // Sleep for 1 second before retrying
         goto ota_task_restart;
     }
-
+    UART_PRINT("[ota report task] OTA socket bound successfully, attempting to listen...\n");
     status = sl_Listen(sock, 0);
     if(status < 0)
     {
@@ -163,6 +170,7 @@ ota_task_restart:
     }
 
     nonBlocking = 1;
+    UART_PRINT("[ota report task] Attempting to set OTA socket as non-blocking...\n");
     status = sl_SetSockOpt(sock, SL_SOL_SOCKET, SL_SO_NONBLOCKING, &nonBlocking,
                            sizeof(nonBlocking));
     if(status < 0)
@@ -180,13 +188,14 @@ ota_task_restart:
     rs485Addr.sin_port = sl_Htons((uint16_t)RS485_SERVER_PORT);
     rs485Addr.sin_addr.s_addr = SL_INADDR_ANY;
 
+    UART_PRINT("[ota report task] Attempting to open RS485 socket on port %d...\n", RS485_SERVER_PORT);
     rs485Sock = sl_Socket(rs485Addr.sin_family, SL_SOCK_STREAM, 0);
     if(rs485Sock < 0)
     {
         UART_PRINT("[RS485 task] Error opening socket, %d \n\r", rs485Sock);
         goto ota_task_restart;
     }
-
+    UART_PRINT("[ota report task] RS485 socket opened successfully, attempting to bind...\n");
     status = sl_Bind(rs485Sock, (SlSockAddr_t *)&rs485Addr, addrSize);
     if(status < 0)
     {
@@ -194,7 +203,7 @@ ota_task_restart:
         sl_Close(rs485Sock);
         goto ota_task_restart;
     }
-
+    UART_PRINT("[ota report task] RS485 socket bound successfully, attempting to listen...\n");
     status = sl_Listen(rs485Sock, 0);
     if(status < 0)
     {
@@ -202,7 +211,7 @@ ota_task_restart:
         sl_Close(rs485Sock);
         goto ota_task_restart;
     }
-
+    UART_PRINT("[ota report task] Attempting to set RS485 socket as non-blocking...\n");
     status = sl_SetSockOpt(rs485Sock, SL_SOL_SOCKET, SL_SO_NONBLOCKING, &nonBlocking,
                            sizeof(nonBlocking));
     if(status < 0)
@@ -339,21 +348,40 @@ ota_task_accept_start:
                 }
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++ RS485 data reception +++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                status = sl_Recv(rs485NewSock, rs485DataBuffer, sizeof(rs485DataBuffer), 0);
-                if(status > 0)
-                {
-                    UART2_write(uartRS485Handle, rs485DataBuffer, status, NULL);
-                    int bytesRead = UART2_read(uartRS485Handle, rs485DataBuffer, sizeof(rs485DataBuffer), NULL);
-                    if (bytesRead > 0)
-                    {
-                        sl_Send(rs485NewSock, rs485DataBuffer, bytesRead, 0);
+//                status = sl_Recv(rs485NewSock, rs485DataBuffer, sizeof(rs485DataBuffer), 0);
+//                if(status > 0)
+//                {
+//                    UART2_write(uartRS485Handle, rs485DataBuffer, status, NULL);
+//                    int bytesRead = UART2_read(uartRS485Handle, rs485DataBuffer, sizeof(rs485DataBuffer), NULL);
+//                    if (bytesRead > 0)
+//                    {
+//                        sl_Send(rs485NewSock, rs485DataBuffer, bytesRead, 0);
+//                    }
+//                }
+//                else if(status < 0)
+//                {
+//                    sl_Close(rs485NewSock);
+//                    goto ota_task_accept_start;
+//                }
+                while (1) {
+                    status = sl_Recv(rs485NewSock, rs485DataBuffer, sizeof(rs485DataBuffer), 0);
+                    if (status > 0) {
+                        UART2_write(uartRS485Handle, rs485DataBuffer, status, NULL);
+                        int bytesRead = UART2_read(uartRS485Handle, rs485DataBuffer, sizeof(rs485DataBuffer), NULL);
+                        if (bytesRead > 0) {
+                            sl_Send(rs485NewSock, rs485DataBuffer, bytesRead, 0);
+                        }
+                    } else if (status == SL_ERROR_BSD_EAGAIN) {
+                        // No data received, continue listening
+                        usleep(RS485_NB_TIMEOUT * 1000);  // Small delay before retrying
+                        continue;
+                    } else {
+                        // Handle other error cases, but do NOT close the socket
+                        UART_PRINT("[RS485 task] Error receiving data, continuing to listen...\n\r");
+                        continue;
                     }
                 }
-                else if(status < 0)
-                {
-                    sl_Close(rs485NewSock);
-                    goto ota_task_accept_start;
-                }
+
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ RS485 data reception ends ++++++++++++++++++++++++++++++++++++
             }
 

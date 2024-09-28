@@ -33,7 +33,7 @@
 /*****************************************************************************
 
    Application Name     -   Getting started with OUT_OF_BOX
-   Application Overview -    This application demonstrates the Out of Box 
+   Application Overview -    This application demonstrates the Out of Box
    Experience with CC32xx LaunchPad.
                                       It highlights the following features:
                           1. easy and straight-forward provisioning methods
@@ -56,7 +56,7 @@
 #include "provisioning_task.h"
 #include "link_local_task.h"
 #include "ota_task.h"
-//#include "uart_term.h"
+#include "uart_term.h"
 
 /* TI-DRIVERS Header files */
 #include <ti/drivers/net/wifi/simplelink.h>
@@ -119,7 +119,7 @@ static void InitializeAppVariables(void);
 //! \return None
 //!
 //*****************************************************************************
-//static void GPIO_clearAndEnable(uint8_t index);
+static void GPIO_clearAndEnable(uint8_t index);
 
 /****************************************************************************
                       GLOBAL VARIABLES
@@ -343,7 +343,7 @@ void SimpleLinkWlanEventHandler(SlWlanEvent_t *pWlanEvent)
         case SL_WLAN_PROVISIONING_AUTO_STARTED:
         {
             UART_PRINT("[WLAN EVENT] Auto-Provisioning Started\r\n");
-            /* stop auto provisioning - 
+            /* stop auto provisioning -
                  may trigger in case of returning to default */
             SignalProvisioningEvent(PrvnEvent_Stopped);
         }
@@ -386,7 +386,7 @@ void SimpleLinkWlanEventHandler(SlWlanEvent_t *pWlanEvent)
                     CLR_STATUS_BIT(OutOfBox_ControlBlock.status,
                                    AppStatusBits_Ipv6gAcquired);
 
-                    /* Provisioning is stopped by the device and provisioning 
+                    /* Provisioning is stopped by the device and provisioning
                     is not done yet, still need to connect to AP */
                     SignalProvisioningEvent(PrvnEvent_WaitForConn);
 
@@ -827,7 +827,7 @@ void pushButtonInterruptHandler2(uint_least8_t index)
     struct timespec ts;
 
     /* Disable the SW2 interrupt */
-//    GPIO_disableInt(CONFIG_GPIO_BUTTON_0); // SW2
+    GPIO_disableInt(CONFIG_GPIO_BUTTON_0); // SW2
 
     /* see ControlMessageType. msg=2 applies to ControlMessageType_Switch2 */
     uint8_t msg = 2;
@@ -952,11 +952,11 @@ int32_t DisplayBanner(char * AppName,
 //! \return None
 //!
 //*****************************************************************************
-//static void GPIO_clearAndEnable(uint8_t index)
-//{
-////    GPIO_clearInt(index);
-////    GPIO_enableInt(index);
-//}
+static void GPIO_clearAndEnable(uint8_t index)
+{
+    GPIO_clearInt(index);
+    GPIO_enableInt(index);
+}
 
 //*****************************************************************************
 //
@@ -1015,8 +1015,8 @@ void * controlTask(void *pvParameters)
     }
 
     /* enable interrupt for the GPIO 22 (email trigger) */
-//    GPIO_setCallback(CONFIG_GPIO_BUTTON_0, pushButtonInterruptHandler2);
-//    GPIO_enableInt(CONFIG_GPIO_BUTTON_0);
+    GPIO_setCallback(CONFIG_GPIO_BUTTON_0, pushButtonInterruptHandler2);
+    GPIO_enableInt(CONFIG_GPIO_BUTTON_0);
 
     while(1)
     {
@@ -1037,27 +1037,27 @@ void * controlTask(void *pvParameters)
             break;
         case ControlMessageType_Switch2:
             UART_PRINT("[Control task] switching to AP mode\n\r");
-            /* SW2 is used to revert to AP mode and stop provisioning 
+            /* SW2 is used to revert to AP mode and stop provisioning
             (if running) so device can be connected and controlled adhoc */
             retVal = provisioningStop();
             // intermmediate phase, need to push AP switch again
-            if(retVal == SL_RET_CODE_DEV_NOT_STARTED)                           
+            if(retVal == SL_RET_CODE_DEV_NOT_STARTED)
             {
                 UART_PRINT(
                     "[Control task] device is not started yet, please press SW2 "
                     "button again\n\r");
                 /* Clear and enable again the SW2 interrupt */
-//                GPIO_clearAndEnable(CONFIG_GPIO_BUTTON_0);
+                GPIO_clearAndEnable(CONFIG_GPIO_BUTTON_0);
                 break;
             }
             // should not happen
-            if((retVal == SL_RET_CODE_DEV_LOCKED) || (retVal == SL_API_ABORTED))                        
+            if((retVal == SL_RET_CODE_DEV_LOCKED) || (retVal == SL_API_ABORTED))
             {
                 UART_PRINT(
                     "[Control task] device cannot start in AP mode, please "
                     "reset the board\n\r");
                 /* Clear and enable again the SW2 interrupt */
-//                GPIO_clearAndEnable(CONFIG_GPIO_BUTTON_0);
+                GPIO_clearAndEnable(CONFIG_GPIO_BUTTON_0);
                 break;
             }
 
@@ -1076,7 +1076,7 @@ void * controlTask(void *pvParameters)
                 ocpRegVal |= (1 << OCP_REGISTER_OFFSET);
                 MAP_PRCMOCRRegisterWrite(OCP_REGISTER_INDEX, ocpRegVal);
                 /* Clear and enable again the SW2 interrupt */
-//                GPIO_clearAndEnable(CONFIG_GPIO_BUTTON_0);
+                GPIO_clearAndEnable(CONFIG_GPIO_BUTTON_0);
                 mcuReboot();
             }
             else
@@ -1085,7 +1085,7 @@ void * controlTask(void *pvParameters)
             }
 
             /* Clear and enable again the SW2 interrupt */
-//            GPIO_clearAndEnable(CONFIG_GPIO_BUTTON_0);
+            GPIO_clearAndEnable(CONFIG_GPIO_BUTTON_0);
             break;
         case ControlMessageType_ResetRequired:
             UART_PRINT("[Control task] platform reboot is required\n\r");
@@ -1128,11 +1128,12 @@ void * mainThread(void *arg)
     struct timespec ts = {0};
 
     GPIO_init();
-//    SPI_init();
+    SPI_init();
     I2C_init();
 
     /* init Terminal, and print App name */
     InitTerm();
+//    initUART();
 
     /* initialize the realtime clock */
     clock_settime(CLOCK_REALTIME, &ts);
@@ -1145,7 +1146,9 @@ void * mainThread(void *arg)
     /* initializes signals for all tasks */
     sem_init(&Provisioning_ControlBlock.connectionAsyncEvent, 0, 0);
     sem_init(&Provisioning_ControlBlock.provisioningDoneSignal, 0, 0);
-    sem_init(&Provisioning_ControlBlock.provisioningConnDoneToOtaServerSignal,0,0);
+    sem_init(&Provisioning_ControlBlock.provisioningConnDoneToOtaServerSignal,
+             0,
+             0);
     sem_init(&LinkLocal_ControlBlock.otaReportServerStartSignal, 0, 0);
     sem_init(&LinkLocal_ControlBlock.otaReportServerStopSignal, 0, 0);
 
@@ -1208,7 +1211,8 @@ void * mainThread(void *arg)
         }
     }
 
-    RetVal = pthread_create(&gProvisioningThread, &pAttrs, provisioningTask,NULL);
+    RetVal = pthread_create(&gProvisioningThread, &pAttrs, provisioningTask,
+                            NULL);
 
     if(RetVal)
     {
@@ -1274,32 +1278,32 @@ void * mainThread(void *arg)
         }
     }
 
-    pthread_attr_init(&pAttrs);
-    priParam.sched_priority = 5;
-    RetVal = pthread_attr_setschedparam(&pAttrs, &priParam);
-    RetVal |= pthread_attr_setstacksize(&pAttrs, TASK_STACK_SIZE);
-
-    if(RetVal)
-    {
-        /* Handle Error */
-        UART_PRINT("Unable to configure otaTask thread parameters \n");
-        while(1)
-        {
-            ;
-        }
-    }
-
-    RetVal = pthread_create(&gOtaThread, &pAttrs, otaTask, NULL);
-
-    if(RetVal)
-    {
-        /* Handle Error */
-        UART_PRINT("Unable to create otaTask thread \n");
-        while(1)
-        {
-            ;
-        }
-    }
+//    pthread_attr_init(&pAttrs);
+//    priParam.sched_priority = 5;
+//    RetVal = pthread_attr_setschedparam(&pAttrs, &priParam);
+//    RetVal |= pthread_attr_setstacksize(&pAttrs, TASK_STACK_SIZE);
+//
+//    if(RetVal)
+//    {
+//        /* Handle Error */
+//        UART_PRINT("Unable to configure otaTask thread parameters \n");
+//        while(1)
+//        {
+//            ;
+//        }
+//    }
+//
+//    RetVal = pthread_create(&gOtaThread, &pAttrs, otaTask, NULL);
+//    UART_PRINT("[ota report task] Opened Socket");
+//    if(RetVal)
+//    {
+//        /* Handle Error */
+//        UART_PRINT("Unable to create otaTask thread \n");
+//        while(1)
+//        {
+//            ;
+//        }
+//    }
 
     return(0);
 }

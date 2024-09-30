@@ -550,6 +550,8 @@ void SimpleLinkNetAppEventHandler(SlNetAppEvent_t *pNetAppEvent)
     {
     case SL_NETAPP_EVENT_IPV4_ACQUIRED:
     {
+        // Check if IP has already been acquired before logging the event again
+        if (!GET_STATUS_BIT(OutOfBox_ControlBlock.status, AppStatusBits_IpAcquired))
         SlIpV4AcquiredAsync_t   *pEventData = NULL;
 
         SET_STATUS_BIT(OutOfBox_ControlBlock.status, AppStatusBits_IpAcquired);
@@ -573,8 +575,9 @@ void SimpleLinkNetAppEventHandler(SlNetAppEvent_t *pNetAppEvent)
 
         sem_post(&Provisioning_ControlBlock.connectionAsyncEvent);
     }
+    // IP already acquired
     break;
-
+    }
     case SL_NETAPP_EVENT_IPV6_ACQUIRED:
     {
         if(!GET_STATUS_BIT(OutOfBox_ControlBlock.status,

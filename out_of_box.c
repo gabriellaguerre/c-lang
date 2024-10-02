@@ -1136,7 +1136,7 @@ void * mainThread(void *arg)
 
     /* init Terminal, and print App name */
     InitTerm();
-//    initUART();
+    initUART();
 
     /* initialize the realtime clock */
     clock_settime(CLOCK_REALTIME, &ts);
@@ -1175,7 +1175,7 @@ void * mainThread(void *arg)
     RetVal = sl_Start(0, 0, 0);
     if(RetVal >= 0)
     {
-        DisplayBanner(APPLICATION_NAME, APPLICATION_VERSION);
+        // DisplayBanner(APPLICATION_NAME, APPLICATION_VERSION);
         RetVal = sl_Stop(SL_STOP_TIMEOUT);
         if(RetVal < 0)
         {

@@ -164,11 +164,11 @@ static unsigned char uart2RxRingBuffer1[32];
 static unsigned char uart2TxRingBuffer1[32];
 
 /* UART2 Pin Definitions for GPIO12 (Pin 9) and GPIO13 (Pin 10) */
-#define UART2CC32XX_PIN_09_UART0_TX 9    // GPIO12, Pin 9 for UART0_TX
-#define UART2CC32XX_PIN_10_UART0_RX 10   // GPIO13, Pin 10 for UART0_RX
+#define PIN_09_UART0_TX 9    // GPIO12, Pin 9 for UART0_TX
+#define PIN_10_UART0_RX 10   // GPIO13, Pin 10 for UART0_RX
 
-#define UART2CC32XX_PIN_02_UART1_TX 2
-#define UART2CC32XX_PIN_03_UART1_RX 3
+#define PIN_46_UART1_TX 46
+#define PIN_47_UART1_RX 47
 
 UART2CC32XX_Object uart2CC32XXObjects0;
 
@@ -180,8 +180,8 @@ static const UART2CC32XX_HWAttrs uart2CC32XXHWAttrs0 = {
     .rxDmaChannel       = UART2CC32XX_DMACH_UNASSIGNED,
     .txDmaChannel       = UART2CC32XX_DMACH_UNASSIGNED,
     // Configure for Pin 9 (TX) and Pin 10 (RX)
-    .rxPin              = UART2CC32XX_PIN_10_UART0_RX,
-    .txPin              = UART2CC32XX_PIN_09_UART0_TX,
+    .rxPin              = PIN_10_UART0_RX,
+    .txPin              = PIN_09_UART0_TX,
     .ctsPin             = UART2CC32XX_PIN_UNASSIGNED,
     .rtsPin             = UART2CC32XX_PIN_UNASSIGNED,
     .rxBufPtr           = uart2RxRingBuffer0,
@@ -199,8 +199,8 @@ static const UART2CC32XX_HWAttrs uart2CC32XXHWAttrs1 = {
     .flowControl        = UART2_FLOWCTRL_NONE,
     .rxDmaChannel       = UART2CC32XX_DMACH_UNASSIGNED,
     .txDmaChannel       = UART2CC32XX_DMACH_UNASSIGNED,
-    .rxPin              = UART2CC32XX_PIN_03_UART1_RX,
-    .txPin              = UART2CC32XX_PIN_02_UART1_TX,
+    .rxPin              = PIN_46_UART1_RX,
+    .txPin              = PIN_47_UART1_TX,
     .ctsPin             = UART2CC32XX_PIN_UNASSIGNED,
     .rtsPin             = UART2CC32XX_PIN_UNASSIGNED,
     .rxBufPtr           = uart2RxRingBuffer1,

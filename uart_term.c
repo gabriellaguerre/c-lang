@@ -62,6 +62,10 @@ UART2_Handle InitTerm(void)
         uartParams.parityType = UART2_Parity_NONE;
         uartParams.readReturnMode = UART2_ReadReturnMode_FULL;
 
+        // Assign pins for UART1
+        uartParams.txPin = UART1_TX_PIN;
+        uartParams.rxPin = UART1_RX_PIN;
+
 
         // Open UART1 with the configured parameters
          uartHandle = UART2_open(1, &uartParams);

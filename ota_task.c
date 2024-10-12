@@ -164,8 +164,8 @@ ota_task_restart:
     status = sl_Listen(sock, 0);
     if(status < 0)
     {
-        UART_PRINT("[ota report task] Error listening on socket, error %d \n\r",
-                   status);
+        UART_PRINT("[ota report task] Error listening on socket, error %d \n\r",status);
+        UART2_write(uartHandle, "[ota report task] Error listening on socket, error", strlen("[ota report task] Error listening on socket, error"), NULL);
         sl_Close(sock);
         goto ota_task_restart;
     }

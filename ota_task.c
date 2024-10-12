@@ -79,6 +79,7 @@ uint8_t gPayloadData[32];
 uint8_t gMetadataResponse[512];
 uint8_t rs485DataBuffer[512];    // +++++ RS485 data buffer +++++
 extern UART2_Handle uartRS485Handle;
+extern UART2_Handle uartHandle;
 
 //*****************************************************************************
 //                            MAIN FUNCTION
@@ -126,11 +127,11 @@ void * otaTask(void *pvParameter)
             ;
         }
     }
-
+    UART2_write(uartHandle, "Inside Ota Task Function", strlen("Inside Ota Task Function"), NULL);
     /* waits for valid local connection - via provisioning task  */
-    UART_PRINT("[ota report task] INSIDE OTA TASK FUNCTION LINE 131");
+    // UART_PRINT("[ota report task] INSIDE OTA TASK FUNCTION LINE 131");
 //    sem_wait(&Provisioning_ControlBlock.provisioningConnDoneToOtaServerSignal);
-    UART_PRINT("[ota report task] INSIDE OTA TASK FUNCTION LINE 133");
+    // UART_PRINT("[ota report task] INSIDE OTA TASK FUNCTION LINE 133");
 
 ota_task_restart:
     /* filling the TCP server socket address */

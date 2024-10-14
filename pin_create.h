@@ -1,13 +1,18 @@
-#ifndef RS485_SERVER_H
-#define RS485_SERVER_H
 
-#include <ti/drivers/net/wifi/simplelink.h>
+#ifndef CREATE_UART0_H
+#define CREATE_UART0_H
 
-// Function to setup the TCP server
-int setupTCPServer(void);
+#include <ti/devices/cc32xx/driverlib/uart.h>
+#include <ti/drivers/GPIO.h>
+#include <ti/devices/cc32xx/driverlib/gpio.h>
 
-// RS485 server task function declaration
-void *rs485ServerTask(void *pvParameter);
+// Define UART1 TX and RX Pin Numbers
+#define UART0_TX_PIN    9  // Pin 9 for UART0 TX
+#define UART0_RX_PIN   10  // Pin 10 for UART0 RX
+
+// Function to configure GPIO for UART0
+void configureGPIOForUART0(void);
 
 
-#endif // RS485_SERVER_H
+
+#endif // CREATE_UART0_H

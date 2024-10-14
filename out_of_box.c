@@ -133,6 +133,7 @@ pthread_t gSpawnThread = (pthread_t)NULL;
 mqd_t controlMQueue;
 
 OutOfBox_CB OutOfBox_ControlBlock;
+extern UART2_Handle uartHandle;
 
 /*****************************************************************************
                   Callback Functions
@@ -1136,7 +1137,8 @@ void * mainThread(void *arg)
 
     /* init Terminal, and print App name */
     InitTerm();
-    initUART();
+    // initUART();
+    UART2_write(uartHandle, "Inside MainThread Function", strlen("Inside MainThread Function"), NULL);
 
     /* initialize the realtime clock */
     clock_settime(CLOCK_REALTIME, &ts);

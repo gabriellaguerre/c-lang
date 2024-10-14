@@ -20,11 +20,11 @@ void readCallback(UART2_Handle handle, void *buf, size_t count, void *userArg, i
 void writeCallback(UART2_Handle handle, void *buf, size_t count, void *userArg, int_fast16_t status);
 
 // Initialize UART for RS485
-void initUART() {
+void initAnt() {
 
     // Configure GPIO12 (pin 9) and GPIO13 (pin 10) for UART0
-    PinTypeUART(PIN_01, PIN_MODE_1);  // UART0 TX
-    PinTypeUART(PIN_02, PIN_MODE_1); // UART0 RX
+    // PinTypeUART(PIN_01, PIN_MODE_1);  // UART0 TX
+    // PinTypeUART(PIN_02, PIN_MODE_1); // UART0 RX
     // Initialize the UART parameters
     UART2_Params_init(&uartParams);
     uartParams.baudRate = 9600;                  // Set baud rate to 9600

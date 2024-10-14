@@ -1,9 +1,4 @@
-
-// TI-Driver includes
-#include <ti/drivers/UART2.h>
-#include "ti_drivers_config.h"
-
-//Defines
-
-void closeUART(void);
-void initUART(void);
+void initAnt(void);
+void sendRS485Data(const char *data, size_t dataSize);
+void receiveRS485Data(char *buffer, size_t bufferSize);
+void initRS485ControlPin();

@@ -73,18 +73,18 @@ void writeCallback(UART2_Handle handle, void *buf, size_t count, void *userArg, 
 
 void sendRS485Data(const char *data, size_t dataSize) {
     // Set DE high to enable transmission mode
-    GPIO_write(51, 1);
+    GPIO_write(6, 1);
 
     // Transmit data over UART
     UART2_write(uartRS485Handle, data, dataSize, NULL);
 
     // After transmission, set DE low to enable reception mode
-    GPIO_write(51, 0);
+    GPIO_write(6, 0);
 }
 
 int receiveRS485Data(char *buffer, size_t bufferSize) {
     // Set DE low to enable reception mode
-    GPIO_write(51, 0);
+    GPIO_write(6, 0);
 
     // Read data from UART
     int bytesRead = UART2_read(uartRS485Handle, buffer, bufferSize, NULL);
@@ -96,8 +96,8 @@ void initRS485ControlPin() {
 //    GPIO_init();
 
     // Set GPIO6 (Pin 51) as an output pin for DE/RE control
-    GPIO_setConfig(51, GPIO_CFG_OUTPUT | GPIO_CFG_OUT_STR_HIGH | GPIO_CFG_OUT_LOW);
+    GPIO_setConfig(6, GPIO_CFG_OUTPUT | GPIO_CFG_OUT_STR_HIGH | GPIO_CFG_OUT_LOW);
 
     // Ensure the transceiver is in receive mode by setting DE low initially
-    GPIO_write(51, 0);  // Set DE/RE to receive mode (low)
+    GPIO_write(6, 0);  // Set DE/RE to receive mode (low)
 }

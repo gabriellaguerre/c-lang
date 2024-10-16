@@ -82,7 +82,7 @@ void sendRS485Data(const char *data, size_t dataSize) {
     GPIO_write(51, 0);
 }
 
-void receiveRS485Data(char *buffer, size_t bufferSize) {
+int receiveRS485Data(char *buffer, size_t bufferSize) {
     // Set DE low to enable reception mode
     GPIO_write(51, 0);
 

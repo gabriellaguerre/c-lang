@@ -1137,7 +1137,7 @@ void * mainThread(void *arg)
 
     /* init Terminal, and print App name */
     InitTerm();
-    // initUART();
+    initAnt();
     UART2_write(uartHandle, "Inside MainThread Function", strlen("Inside MainThread Function"), NULL);
 
     /* initialize the realtime clock */

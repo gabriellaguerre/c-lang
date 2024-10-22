@@ -68,7 +68,7 @@ UART2_Handle InitTerm(void)
 
 
         // Open UART1 with the configured parameters
-         uartHandle = UART2_open(1, &uartParams);
+         uartHandle = UART2_open(CONFIG_UART2_0, &uartParams);
          if(uartHandle == NULL) {
              //Handle error
          }

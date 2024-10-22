@@ -22,6 +22,8 @@ void writeCallback(UART2_Handle handle, void *buf, size_t count, void *userArg, 
 // Initialize UART for RS485
 void initAnt() {
 
+    initRS485ControlPin()
+
     // Configure GPIO12 (pin 9) and GPIO13 (pin 10) for UART0
     // PinTypeUART(PIN_01, PIN_MODE_1);  // UART0 TX
     // PinTypeUART(PIN_02, PIN_MODE_1); // UART0 RX
@@ -37,7 +39,7 @@ void initAnt() {
     uartParams.writeCallback = writeCallback;    // Write callback function
 
     // Open the UART with the configured parameters
-    uartRS485Handle = UART2_open(CONFIG_UART2_0, &uartParams);
+    uartRS485Handle = UART2_open(UART0_rs485comm, &uartParams);
     if (uartRS485Handle == NULL) {
         // UART2_open() failed
         sendRS485DebugMessage("UART2_open failed\n");

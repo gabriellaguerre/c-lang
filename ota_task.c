@@ -97,37 +97,38 @@ extern UART2_Handle uartHandle;
 void * otaTask(void *pvParameter)
 {
 
-    uint8_t otaProgressBar, mailboxItems;
-    uint16_t acceptTrials, recvTrials, mailboxTrials;
+    // uint8_t otaProgressBar, mailboxItems;
+    uint16_t acceptTrials
 
-    int16_t sock, rs485Sock;    // +++++ RS485 socket +++++
-    int16_t newsock = -1, rs485NewSock = -1;  // +++++ RS485 new client socket +++++
+    // int16_t sock, rs485Sock;    // +++++ RS485 socket +++++
+    int16_t rs485Sock;    // +++++ RS485 socket +++++
+    int16_t rs485NewSock = -1;  // +++++ RS485 new client socket +++++
     int32_t status;
     int32_t nonBlocking = 0;
     int16_t addrSize;
     uint32_t contentLen;
 
-    int32_t msgqRetVal;
-    struct timespec ts;
-    mq_attr attr;
+    // int32_t msgqRetVal;
+    // struct timespec ts;
+    // mq_attr attr;
 
     SlSockAddrIn_t sAddr;
-    SlSockAddrIn_t sLocalAddr, rs485Addr;    // +++++ RS485 address +++++
+    SlSockAddrIn_t rs485Addr;    // +++++ RS485 address +++++
 
     /* initializes mailbox for ota report server */
-    attr.mq_maxmsg = 50;         /* queue size */
-    attr.mq_msgsize = sizeof(uint8_t);        /* Size of message */
-    LinkLocal_ControlBlock.reportServerMQueue =
-        mq_open("report server msg q", O_CREAT, 0, &attr);
-    if(((int)LinkLocal_ControlBlock.reportServerMQueue) <= 0)
-    {
-        UART_PRINT("[Link local task] could not create msg queue\n\r");
-        while(1)
-        {
-            ;
-        }
-    }
-    UART2_write(uartHandle, "Inside Ota Task Function", strlen("Inside Ota Task Function"), NULL);
+    // attr.mq_maxmsg = 50;         /* queue size */
+    // attr.mq_msgsize = sizeof(uint8_t);        /* Size of message */
+    // LinkLocal_ControlBlock.reportServerMQueue =
+    //     mq_open("report server msg q", O_CREAT, 0, &attr);
+    // if(((int)LinkLocal_ControlBlock.reportServerMQueue) <= 0)
+    // {
+    //     UART_PRINT("[Link local task] could not create msg queue\n\r");
+    //     while(1)
+    //     {
+    //         ;
+    //     }
+    // }
+    // UART2_write(uartHandle, "Inside Ota Task Function", strlen("Inside Ota Task Function"), NULL);
     /* waits for valid local connection - via provisioning task  */
     // UART_PRINT("[ota report task] INSIDE OTA TASK FUNCTION LINE 131");
 //    sem_wait(&Provisioning_ControlBlock.provisioningConnDoneToOtaServerSignal);
@@ -225,11 +226,12 @@ ota_task_restart:
 
     while(1)
     {
-        otaProgressBar = 0;
+    //     otaProgressBar = 0;
         acceptTrials = 0;
-        recvTrials = 0;
-        mailboxTrials = 0;
-
+    //     recvTrials = 0;
+    //     mailboxTrials = 0;
+        rs485NewSock = SL_ERROR_BSD_EAGAIN;
+        UART_PRINT("Inside While Loop line 205");
  /* waits for ota request from client before openning the ota response server */
         // sem_wait(&LinkLocal_ControlBlock.otaReportServerStartSignal);
 
@@ -290,9 +292,23 @@ ota_task_restart:
 //             }
 
 // ++++++++++++++++++++++++++++++++++++ RS485 client accept starts ++++++++++++++++++++++++++++++++++++++++++++++++++
+            UART_PRINT("rs485NewSock value: %d", rs485NewSock);
             while(rs485NewSock < 0)
             {
+                UART_PRINT("Attempting to accept RS485 connection with rs485Sock value: %d \n", rs485Sock);
                 rs485NewSock = sl_Accept(rs485Sock, (struct SlSockAddr_t *)&sAddr, (SlSocklen_t *)&addrSize);
+                UART_PRINT("After sl_Accept, rs485NewSock: %d\n", rs485NewSock);
+
+
+
+
+
+
+
+
+
+
+
                 if((rs485NewSock == SL_ERROR_BSD_EAGAIN) && nonBlocking)
                 {
                     usleep(RS485_NB_TIMEOUT * 1000);
@@ -307,46 +323,46 @@ ota_task_restart:
 // ++++++++++++++++++++++++++++++++++++++++ RS485 client accept ends +++++++++++++++++++++++++++++++++++++++++++++++++
 
             /* receive some data from the peer client */
-            while(1)
-            {
-                status =
-                    sl_Recv(newsock, gMetadataResponse,
-                            sizeof(gMetadataResponse), 0);
-                if((status == SL_ERROR_BSD_EAGAIN) && nonBlocking)
-                {
-                    usleep(OTA_NB_TIMEOUT * 1000);
+            // while(1)
+            // {
+            //     status =
+            //         sl_Recv(newsock, gMetadataResponse,
+            //                 sizeof(gMetadataResponse), 0);
+            //     if((status == SL_ERROR_BSD_EAGAIN) && nonBlocking)
+            //     {
+            //         usleep(OTA_NB_TIMEOUT * 1000);
 
-                    recvTrials++;
-                    if(recvTrials > OTA_NUM_OF_ACCEPT_TRIALS)
-                    {
-                        UART_PRINT(
-                            "[ota report task] Error receiving message from "
-                            "client, aborting progress bar... \n\r");
-                        sl_Close(newsock);
-                        recvTrials = 0;
+            //         recvTrials++;
+            //         if(recvTrials > OTA_NUM_OF_ACCEPT_TRIALS)
+            //         {
+            //             UART_PRINT(
+            //                 "[ota report task] Error receiving message from "
+            //                 "client, aborting progress bar... \n\r");
+            //             sl_Close(newsock);
+            //             recvTrials = 0;
 
-                        goto ota_task_end;
-                    }
-                }
-                else if(status < 0)
-                {
-                    sl_Close(newsock);
-                    goto ota_task_accept_start;
-                }
-                else if(status == 0)
-                {
-                    INFO_PRINT(
-                        "[ota report task] client closed connection \n\r");
-                    sl_Close(newsock);
-                    goto ota_task_accept_start;
-                }
-                else
-                {
-                    INFO_PRINT(
-                       "[ota report task] received some data from client \n\r");
-                    recvTrials = 0;
-                    break;
-                }
+            //             goto ota_task_end;
+            //         }
+            //     }
+            //     else if(status < 0)
+            //     {
+            //         sl_Close(newsock);
+            //         goto ota_task_accept_start;
+            //     }
+            //     else if(status == 0)
+            //     {
+            //         INFO_PRINT(
+            //             "[ota report task] client closed connection \n\r");
+            //         sl_Close(newsock);
+            //         goto ota_task_accept_start;
+            //     }
+            //     else
+            //     {
+            //         INFO_PRINT(
+            //            "[ota report task] received some data from client \n\r");
+            //         recvTrials = 0;
+            //         break;
+            //     }
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++ RS485 data reception +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //                status = sl_Recv(rs485NewSock, rs485DataBuffer, sizeof(rs485DataBuffer), 0);
@@ -493,12 +509,10 @@ ota_task_restart:
             // }
 
             // sl_Close(newsock);
-            sl_Close(rs485NewSock);  // +++++ Close RS485 socket +++++
-        }
+//             sl_Close(rs485NewSock);  // +++++ Close RS485 socket +++++
+//         }
 
-ota_task_end:
+// ota_task_end:
 
-        sem_post(&LinkLocal_ControlBlock.otaReportServerStopSignal);
+//         sem_post(&LinkLocal_ControlBlock.otaReportServerStopSignal);
     }
-
-

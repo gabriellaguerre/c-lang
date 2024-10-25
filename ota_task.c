@@ -325,14 +325,26 @@ ota_task_restart:
                         }
 
 
+                    // Continue to listen for incoming connections on the UART side
+                    bytesRead485 = sl_Recv(rs485NewSock, buffer, sizeof(buffer), 0);
+                    UART_PRINT("[RS485 task] bytesRead value: %d\n", bytesRead485);
 
+                    if (bytesRead485 > 0) {
+                        UART_PRINT("[RS485 task] Received data: %s\n", buffer);
 
-
-
-
-
-
-
+                         // Process the received data
+                        sendRS485Data(buffer, bytesRead485); // Echo back or process the data
+                    } else if (bytesRead485 == SL_ERROR_BSD_EAGAIN) {
+                        // No data available, continue listening
+                        usleep(RS485_NB_TIMEOUT * 1000);
+                    } else {
+                        UART_PRINT("[RS485 task] Error receiving data, closing connection\n");
+                        sl_Close(rs485NewSock); // Close the socket on error
+                        break;
+                    }
+                }
+             } else {
+                UART_PRINT("[RS485 task] Error accepting RS485 client connection: %d\n", rs485NewSock);
 
                 if((rs485NewSock == SL_ERROR_BSD_EAGAIN) && nonBlocking)
                 {

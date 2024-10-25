@@ -299,6 +299,31 @@ ota_task_restart:
                 rs485NewSock = sl_Accept(rs485Sock, (struct SlSockAddr_t *)&sAddr, (SlSocklen_t *)&addrSize);
                 UART_PRINT("After sl_Accept, rs485NewSock: %d\n", rs485NewSock);
 
+                // Check if a connection was successfully accepted
+                if (rs485NewSock >= 0) {
+                    UART_PRINT("[RS485 task] Successfully accepted a connection on RS485\n");
+
+                    char buffer[512]; // Adjust size as needed
+                    int bytesRead485;
+
+                    while (1) {
+                        // Check for data from the antenna (RS485)
+                        char rs485Buffer[512];
+
+                        int bytesReceived = receiveRS485Data(rs485Buffer, sizeof(rs485Buffer));
+                        UART_PRINT("[RS485 task] bytesReceived: %d;  rs485Buffer: %d\n", bytesReceived, rs485Buffer);
+
+                        if (bytesReceived > 0) {
+                            // Process the received RS485 data
+                            UART_PRINT("[RS485 task] Received from antenna: %s\n", rs485Buffer);
+
+                            // Send data to the SmartDF app via Wi-Fi
+                            sendRS485Data(rs485Buffer, bytesReceived);
+
+                            // Optionally send the same data back to the antenna via RS485
+//                            sendRS485Data(rs485Buffer, bytesReceived);
+                        }
+
 
 
 

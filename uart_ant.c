@@ -93,13 +93,43 @@ int receiveRS485Data(char *buffer, size_t bufferSize) {
     return bytesRead;
 }
 
-void initRS485ControlPin() {
-    // Initialize the GPIO driver if not already initialized
-//    GPIO_init();
+// void initRS485ControlPin() {
+//     // Initialize the GPIO driver if not already initialized
+// //    GPIO_init();
 
-    // Set GPIO6 (Pin 51) as an output pin for DE/RE control
-    GPIO_setConfig(6, GPIO_CFG_OUTPUT | GPIO_CFG_OUT_STR_HIGH | GPIO_CFG_OUT_LOW);
+//     // Set GPIO6 (Pin 51) as an output pin for DE/RE control
+//     GPIO_setConfig(6, GPIO_CFG_OUTPUT | GPIO_CFG_OUT_STR_HIGH | GPIO_CFG_OUT_LOW);
 
-    // Ensure the transceiver is in receive mode by setting DE low initially
-    GPIO_write(6, 0);  // Set DE/RE to receive mode (low)
+//     // Ensure the transceiver is in receive mode by setting DE low initially
+//     GPIO_write(6, 0);  // Set DE/RE to receive mode (low)
+// }
+void receiveAntennaData() {
+    char buffer[512]; // Buffer to store incoming data
+    int bytesRead;
+
+    // Ensure the transceiver is in receive mode
+//     GPIO_write(CONFIG_GPIO_RE_DE, 0); // Set DE/RE to receive mode (low)
+    UART_PRINT("uartRS485Handle: %d\n", uartRS485Handle);
+
+    while (1) {
+        // Read data from the UART
+        bytesRead = receiveRS485Data(buffer, bufferSize);
+        UART_PRINT("bytessRead: %d\n", bytesRead);
+
+
+        if (bytesRead >= 0) {
+            buffer[bytesRead] = '\0'; // Null-terminate the received data
+            UART_PRINT("Received from antenna: %s\n", buffer);
+
+        } else if (bytesRead == SL_ERROR_BSD_EAGAIN) {
+               // No data available, wait and try again
+            usleep(100000); // Adjust as necessary
+
+        } else {
+            UART_PRINT("Error reading from UART\n");
+            break;
+        }
+        // Add a small delay to avoid busy-waiting
+
+    }
 }

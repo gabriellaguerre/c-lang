@@ -1133,12 +1133,13 @@ void * mainThread(void *arg)
 
     GPIO_init();
     SPI_init();
-    I2C_init();
-
+    // I2C_init();
+    GPIO_write(CONFIG_GPIO_RE_DE, 1);
     /* init Terminal, and print App name */
     InitTerm();
     initAnt();
-    UART2_write(uartHandle, "Inside MainThread Function", strlen("Inside MainThread Function"), NULL);
+    receiveAntennaData();
+    // UART2_write(uartHandle, "Inside MainThread Function", strlen("Inside MainThread Function"), NULL);
 
     /* initialize the realtime clock */
     clock_settime(CLOCK_REALTIME, &ts);

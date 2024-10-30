@@ -33,10 +33,12 @@ void initAnt() {
     uartParams.dataLength = UART2_DataLen_8;     // 8 data bits
     uartParams.stopBits = UART2_StopBits_1;      // 1 stop bit
     uartParams.parityType = UART2_Parity_NONE;   // No parity
-    uartParams.readMode = UART2_Mode_CALLBACK;   // Non-blocking mode for read
-    uartParams.writeMode = UART2_Mode_CALLBACK;  // Non-blocking mode for write
-    uartParams.readCallback = readCallback;      // Read callback function
-    uartParams.writeCallback = writeCallback;    // Write callback function
+    uartParams.readMode = UART2_Mode_BLOCKING;   // blocking mode for read
+    uartParams.writeMode = UART2_Mode_BLOCKING;  // blocking mode for write
+    // uartParams.readMode = UART2_Mode_CALLBACK;   // Non-blocking mode for read
+    // uartParams.writeMode = UART2_Mode_CALLBACK;  // Non-blocking mode for write
+    // uartParams.readCallback = readCallback;      // Read callback function
+    // uartParams.writeCallback = writeCallback;    // Write callback function
 
     // Open the UART with the configured parameters
     uartRS485Handle = UART2_open(UART0_rs485comm, &uartParams);
@@ -56,22 +58,22 @@ void closeUART() {
 }
 
 // Callback function for read operations
-void readCallback(UART2_Handle handle, void *buf, size_t count, void *userArg, int_fast16_t status) {
-    if (status == UART2_STATUS_SUCCESS) {
-        sendRS485DebugMessage("Read successful\n");
-    } else {
-        sendRS485DebugMessage("Read failed\n");
-    }
-}
+// void readCallback(UART2_Handle handle, void *buf, size_t count, void *userArg, int_fast16_t status) {
+//     if (status == UART2_STATUS_SUCCESS) {
+//         sendRS485DebugMessage("Read successful\n");
+//     } else {
+//         sendRS485DebugMessage("Read failed\n");
+//     }
+// }
 
 // Callback function for write operations
-void writeCallback(UART2_Handle handle, void *buf, size_t count, void *userArg, int_fast16_t status) {
-    if (status == UART2_STATUS_SUCCESS) {
-        sendRS485DebugMessage("Write successful\n");
-    } else {
-        sendRS485DebugMessage("Write failed\n");
-    }
-}
+// void writeCallback(UART2_Handle handle, void *buf, size_t count, void *userArg, int_fast16_t status) {
+//     if (status == UART2_STATUS_SUCCESS) {
+//         sendRS485DebugMessage("Write successful\n");
+//     } else {
+//         sendRS485DebugMessage("Write failed\n");
+//     }
+// }
 
 void sendRS485Data(const char *data, size_t dataSize) {
     // Set DE high to enable transmission mode
@@ -113,9 +115,10 @@ void receiveAntennaData() {
 
     while (1) {
         // Read data from the UART
-        bytesRead = receiveRS485Data(buffer, bufferSize);
+        // bytesRead = receiveRS485Data(buffer, bufferSize);
+        bytesRead = UART2_read(uartRS485Handle, buffer, sizeof(buffer), NULL);
         UART_PRINT("bytessRead: %d\n", bytesRead);
-
+      
 
         if (bytesRead >= 0) {
             buffer[bytesRead] = '\0'; // Null-terminate the received data

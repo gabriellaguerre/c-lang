@@ -182,7 +182,8 @@ ota_task_restart:
                         // Check for data from the antenna (RS485)
                         char rs485Buffer[512];
 
-                        int bytesReceived = receiveRS485Data(rs485Buffer, sizeof(rs485Buffer));
+                        // int bytesReceived = receiveRS485Data(rs485Buffer, sizeof(rs485Buffer));
+                        int bytesReceived = sl_Recv(rs485NewSock, buffer, sizeof(buffer), 0);
                         UART_PRINT("[RS485 task] bytesReceived: %d;  rs485Buffer: %d\n", bytesReceived, rs485Buffer);
 
                         if (bytesReceived > 0) {
@@ -191,6 +192,7 @@ ota_task_restart:
 
                             // Send data to the SmartDF app via Wi-Fi
                             sendRS485Data(rs485Buffer, bytesReceived);
+                            sl_Send(rs485NewSock, rs485DataBuffer, bytesRead, 0);
 
                             // Optionally send the same data back to the antenna via RS485
 //                            sendRS485Data(rs485Buffer, bytesReceived);
@@ -205,7 +207,8 @@ ota_task_restart:
                         UART_PRINT("[RS485 task] Received data: %s\n", buffer);
 
                          // Process the received data
-                        sendRS485Data(buffer, bytesRead485); // Echo back or process the data
+                        // sendRS485Data(buffer, bytesRead485); // Echo back or process the data
+                        sl_Send(rs485NewSock, rs485DataBuffer, bytesRead, 0);
                     } else if (bytesRead485 == SL_ERROR_BSD_EAGAIN) {
                         // No data available, continue listening
                         usleep(RS485_NB_TIMEOUT * 1000);

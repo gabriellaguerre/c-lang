@@ -1134,7 +1134,7 @@ void * mainThread(void *arg)
     GPIO_init();
     SPI_init();
     // I2C_init();
-    GPIO_write(CONFIG_GPIO_RE_DE, 1);
+    GPIO_write(CONFIG_GPIO_RE_DE, 0);
     /* init Terminal, and print App name */
     InitTerm();
     initAnt();

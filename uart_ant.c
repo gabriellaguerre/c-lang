@@ -22,12 +22,6 @@ void writeCallback(UART2_Handle handle, void *buf, size_t count, void *userArg, 
 // Initialize UART for RS485
 void initAnt() {
 
-    initRS485ControlPin()
-
-    // Configure GPIO12 (pin 9) and GPIO13 (pin 10) for UART0
-    // PinTypeUART(PIN_01, PIN_MODE_1);  // UART0 TX
-    // PinTypeUART(PIN_02, PIN_MODE_1); // UART0 RX
-    // Initialize the UART parameters
     UART2_Params_init(&uartParams);
     uartParams.baudRate = 9600;                  // Set baud rate to 9600
     uartParams.dataLength = UART2_DataLen_8;     // 8 data bits
@@ -35,10 +29,7 @@ void initAnt() {
     uartParams.parityType = UART2_Parity_NONE;   // No parity
     uartParams.readMode = UART2_Mode_BLOCKING;   // blocking mode for read
     uartParams.writeMode = UART2_Mode_BLOCKING;  // blocking mode for write
-    // uartParams.readMode = UART2_Mode_CALLBACK;   // Non-blocking mode for read
-    // uartParams.writeMode = UART2_Mode_CALLBACK;  // Non-blocking mode for write
-    // uartParams.readCallback = readCallback;      // Read callback function
-    // uartParams.writeCallback = writeCallback;    // Write callback function
+
 
     // Open the UART with the configured parameters
     uartRS485Handle = UART2_open(UART0_rs485comm, &uartParams);
@@ -57,23 +48,6 @@ void closeUART() {
     UART2_close(uartRS485Handle);
 }
 
-// Callback function for read operations
-// void readCallback(UART2_Handle handle, void *buf, size_t count, void *userArg, int_fast16_t status) {
-//     if (status == UART2_STATUS_SUCCESS) {
-//         sendRS485DebugMessage("Read successful\n");
-//     } else {
-//         sendRS485DebugMessage("Read failed\n");
-//     }
-// }
-
-// Callback function for write operations
-// void writeCallback(UART2_Handle handle, void *buf, size_t count, void *userArg, int_fast16_t status) {
-//     if (status == UART2_STATUS_SUCCESS) {
-//         sendRS485DebugMessage("Write successful\n");
-//     } else {
-//         sendRS485DebugMessage("Write failed\n");
-//     }
-// }
 
 void sendRS485Data(const char *data, size_t dataSize) {
     // Set DE high to enable transmission mode
@@ -86,25 +60,7 @@ void sendRS485Data(const char *data, size_t dataSize) {
     GPIO_write(6, 0);
 }
 
-int receiveRS485Data(char *buffer, size_t bufferSize) {
-    // Set DE low to enable reception mode
-    GPIO_write(6, 0);
 
-    // Read data from UART
-    int bytesRead = UART2_read(uartRS485Handle, buffer, bufferSize, NULL);
-    return bytesRead;
-}
-
-// void initRS485ControlPin() {
-//     // Initialize the GPIO driver if not already initialized
-// //    GPIO_init();
-
-//     // Set GPIO6 (Pin 51) as an output pin for DE/RE control
-//     GPIO_setConfig(6, GPIO_CFG_OUTPUT | GPIO_CFG_OUT_STR_HIGH | GPIO_CFG_OUT_LOW);
-
-//     // Ensure the transceiver is in receive mode by setting DE low initially
-//     GPIO_write(6, 0);  // Set DE/RE to receive mode (low)
-// }
 void receiveAntennaData() {
     char buffer[512]; // Buffer to store incoming data
     int bytesRead;
@@ -118,7 +74,7 @@ void receiveAntennaData() {
         // bytesRead = receiveRS485Data(buffer, bufferSize);
         bytesRead = UART2_read(uartRS485Handle, buffer, sizeof(buffer), NULL);
         UART_PRINT("bytessRead: %d\n", bytesRead);
-      
+
 
         if (bytesRead >= 0) {
             buffer[bytesRead] = '\0'; // Null-terminate the received data

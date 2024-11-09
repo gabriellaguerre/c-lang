@@ -10,15 +10,6 @@
 UART2_Handle uartRS485Handle;
 UART2_Params uartParams;
 
-// Function to send debug messages over RS485
-void sendRS485DebugMessage(const char* message) {
-    UART2_write(uartRS485Handle, message, strlen(message), NULL);
-}
-
-// Declare callback functions
-void readCallback(UART2_Handle handle, void *buf, size_t count, void *userArg, int_fast16_t status);
-void writeCallback(UART2_Handle handle, void *buf, size_t count, void *userArg, int_fast16_t status);
-
 // Initialize UART for RS485
 void initAnt() {
 
@@ -35,10 +26,10 @@ void initAnt() {
     uartRS485Handle = UART2_open(UART0_rs485comm, &uartParams);
     if (uartRS485Handle == NULL) {
         // UART2_open() failed
-        sendRS485DebugMessage("UART2_open failed\n");
+       UART_PRINT("UART2_open failed\n");
         while (1);
     } else {
-        sendRS485DebugMessage("UART2_open succeeded\n");
+        UART_PRINT("UART2_open succeeded\n");
     }
 }
 
@@ -66,7 +57,7 @@ void receiveAntennaData() {
     UART_PRINT("Receiving data from antenna...\n");
 
     while (1) {
-        GPIO_write(CONFIG_GPIO_RE_DE, 0);  // Set to receive mode
+        // GPIO_write(CONFIG_GPIO_RE_DE, 0);  // Set to receive mode
 
         int bytesRead = UART2_read(uartRS485Handle, buffer, sizeof(buffer), NULL);
         UART_PRINT("Read attempt: bytesRead = %d\n", bytesRead);
@@ -74,14 +65,10 @@ void receiveAntennaData() {
         if (bytesRead > 0) {
             buffer[bytesRead] = '\0'; // Null-terminate the received data
             UART_PRINT("Received from antenna: %s\n", buffer);
-
-        } else if (bytesRead == SL_ERROR_BSD_EAGAIN) {
-               // No data available, wait and try again
-            usleep(100000); // Adjust as necessary
-
+            
         } else {
             UART_PRINT("Error reading from UART\n");
-            break;
+            usleep(100000);
         }
         // Add a small delay to avoid busy-waiting
 

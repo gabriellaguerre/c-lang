@@ -55,22 +55,34 @@ void sendRS485Data(const char *data, size_t dataSize) {
 void receiveAntennaData() {
 
     UART_PRINT("Receiving data from antenna...\n");
+    int bytesRead;
+    int bytesWritten;
 
     while (1) {
         // GPIO_write(CONFIG_GPIO_RE_DE, 0);  // Set to receive mode
+          // int bytesRead = UART2_read(uartRS485Handle, buffer, sizeof(buffer), NULL);
 
-        int bytesRead = UART2_read(uartRS485Handle, buffer, sizeof(buffer), NULL);
-        UART_PRINT("Read attempt: bytesRead = %d\n", bytesRead);
+        bytesRead = 0;
+        while (bytesRead == 0) {
+            status = UART2_read(uartRS485Handle, buffer, 1024, &bytesRead);
+            UART_PRINT("bytesRead: %d\n", bytesRead);
 
-        if (bytesRead > 0) {
-            buffer[bytesRead] = '\0'; // Null-terminate the received data
-            UART_PRINT("Received from antenna: %s\n", buffer);
-            
-        } else {
-            UART_PRINT("Error reading from UART\n");
-            usleep(100000);
+        if(status != UART2_STATUS_SUCCESS) {
+                UART_PRINT("error reading bytesRead");
+            }
+
         }
-        // Add a small delay to avoid busy-waiting
+
+        bytesWritten = 0;
+        while (bytesWritten == 0){
+            status2 = UART2_write(uartRS485Handle, buffer, 1024, &bytesWritten);
+            UART_PRINT("bytesWritten: %d\n", bytesWritten);
+
+            if(status2 != UART2_STATUS_SUCCESS) {
+                UART_PRINT("error reading bytesRead");
+           }
+
+        }
 
     }
 }

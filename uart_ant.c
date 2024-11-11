@@ -64,22 +64,26 @@ void receiveAntennaData() {
 
         bytesRead = 0;
         while (bytesRead == 0) {
-            status = UART2_read(uartRS485Handle, buffer, 1024, &bytesRead);
-            UART_PRINT("bytesRead: %d\n", bytesRead);
+            status = UART2_read(uartRS485Handle, buffer, BUFFER_SIZE, &bytesRead);
+            UART_PRINT("status: %d, bytesRead: %u\n", status, bytesRead);
 
         if(status != UART2_STATUS_SUCCESS) {
                 UART_PRINT("error reading bytesRead");
+                break;
             }
 
         }
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            UART_PRINT("Received from antenna: %s\n, buffer");
 
-        bytesWritten = 0;
-        while (bytesWritten == 0){
-            status2 = UART2_write(uartRS485Handle, buffer, 1024, &bytesWritten);
-            UART_PRINT("bytesWritten: %d\n", bytesWritten);
+            bytesWritten = 0;
+            status2 = UART2_write(uartRS485Handle, buffer, BUFFER_SIZE, &bytesWritten);
+            UART_PRINT("status2: %d, bytesWritten: %d\n", status2, bytesWritten);
 
             if(status2 != UART2_STATUS_SUCCESS) {
                 UART_PRINT("error reading bytesRead");
+                break;
            }
 
         }

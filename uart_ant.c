@@ -57,10 +57,9 @@ void receiveAntennaData() {
     UART_PRINT("Receiving data from antenna...\n");
     int bytesRead;
     int bytesWritten;
+    GPIO_write(CONFIG_GPIO_RE_DE, 0);  // Set to receive mode
 
     while (1) {
-        // GPIO_write(CONFIG_GPIO_RE_DE, 0);  // Set to receive mode
-          // int bytesRead = UART2_read(uartRS485Handle, buffer, sizeof(buffer), NULL);
 
         bytesRead = 0;
         while (bytesRead == 0) {
@@ -78,8 +77,10 @@ void receiveAntennaData() {
             UART_PRINT("Received from antenna: %s\n, buffer");
 
             bytesWritten = 0;
+            GPIO_write(CONFIG_GPIO_RE_DE, 1);  // Set to transmit mode
             status2 = UART2_write(uartRS485Handle, buffer, BUFFER_SIZE, &bytesWritten);
             UART_PRINT("status2: %d, bytesWritten: %d\n", status2, bytesWritten);
+             GPIO_write(CONFIG_GPIO_RE_DE, 0);  // Set back to receive mode
 
             if(status2 != UART2_STATUS_SUCCESS) {
                 UART_PRINT("error reading bytesRead");

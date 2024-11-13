@@ -30,6 +30,7 @@ void initAnt() {
         while (1);
     } else {
         UART_PRINT("UART2_open succeeded\n");
+        receiveAntennaData();
     }
 }
 

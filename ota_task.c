@@ -152,6 +152,7 @@ ota_task_restart:
         sl_Close(rs485Sock);
         goto ota_task_restart;
     }
+    initAnt();
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++ RS485 server setup ends +++++++++++++++++++++++++++++++++++++
 
     while(1)

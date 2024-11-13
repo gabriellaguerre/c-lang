@@ -1137,8 +1137,8 @@ void * mainThread(void *arg)
     GPIO_write(CONFIG_GPIO_RE_DE, 0);
     /* init Terminal, and print App name */
     InitTerm();
-    initAnt();
-    receiveAntennaData();
+
+   
     // UART2_write(uartHandle, "Inside MainThread Function", strlen("Inside MainThread Function"), NULL);
 
     /* initialize the realtime clock */

@@ -111,7 +111,7 @@ void * otaTask(void *pvParameter)
     SlSockAddrIn_t sAddr;
     SlSockAddrIn_t rs485Addr;    // +++++ RS485 address +++++
 
-
+    initAnt();
 ota_task_restart:
 
 
@@ -172,9 +172,11 @@ ota_task_restart:
                 rs485NewSock = sl_Accept(rs485Sock, (struct SlSockAddr_t *)&sAddr, (SlSocklen_t *)&addrSize);
                 UART_PRINT("After sl_Accept, rs485NewSock: %d\n", rs485NewSock);
 
+
                 // Check if a connection was successfully accepted
                 if (rs485NewSock >= 0) {
                     UART_PRINT("[RS485 task] Successfully accepted a connection on RS485\n");
+                    receiveAntennaData();
 
                     char buffer[512]; // Adjust size as needed
                     int bytesRead485;

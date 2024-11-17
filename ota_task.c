@@ -94,6 +94,15 @@ extern UART2_Handle uartHandle;
 //! \return None
 //!
 //*****************************************************************************
+#define BUFFER_SIZE 64
+char buffer[BUFFER_SIZE];
+
+int32_t status;
+int32_t status2;
+size_t bytesAntenna;
+size_t bytesWritten = 0;
+
+
 void * otaTask(void *pvParameter)
 {
 
@@ -106,12 +115,12 @@ void * otaTask(void *pvParameter)
     int32_t status;
     int32_t nonBlocking = 0;
     int16_t addrSize;
-    uint32_t contentLen;
+    // uint32_t contentLen;
 
     SlSockAddrIn_t sAddr;
     SlSockAddrIn_t rs485Addr;    // +++++ RS485 address +++++
 
-    initAnt();
+
 ota_task_restart:
 
 
@@ -161,7 +170,7 @@ ota_task_restart:
         acceptTrials = 0;
 
         rs485NewSock = SL_ERROR_BSD_EAGAIN;
-        UART_PRINT("Inside While Loop line 205");
+        // UART_PRINT("Inside While Loop line 205");
 
 
 // ++++++++++++++++++++++++++++++++++++ RS485 client accept starts ++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -176,17 +185,27 @@ ota_task_restart:
                 // Check if a connection was successfully accepted
                 if (rs485NewSock >= 0) {
                     UART_PRINT("[RS485 task] Successfully accepted a connection on RS485\n");
-                    receiveAntennaData();
-
-                    char buffer[512]; // Adjust size as needed
-                    int bytesRead485;
 
                     while (1) {
                         // Check for data from the antenna (RS485)
-                        char rs485Buffer[512];
+                        bytesAntenna = 0;
 
-                        // int bytesReceived = receiveRS485Data(rs485Buffer, sizeof(rs485Buffer));
-                        int bytesReceived = sl_Recv(rs485NewSock, buffer, sizeof(buffer), 0);
+                        status = UART2_read(uart485Handle, buffer, BUFFER_SIZE, &bytesAntenna);
+                        UART_PRINT("status: %d, bytesAntenna: %u\n", status, bytesAntenna);
+
+                        if (status != UART2_STATUS_SUCCESS) {
+                            UART_PRINT("Error reading bytesRead\n");
+                            break;  // Exit loop on error
+                        }
+
+                        if (bytesAntenna > 0) {
+                            buffer[bytesAntenna] = '\0';
+                            UART_PRINT("Received from antenna: %s\n", buffer);
+
+                            //send bytesAntenna data over wifi
+                            sl_Recv(rs485NewSock, buffer, sizeof(buffer), 0);
+                        }
+
                         UART_PRINT("[RS485 task] bytesReceived: %d;  rs485Buffer: %d\n", bytesReceived, rs485Buffer);
 
                         if (bytesReceived > 0) {

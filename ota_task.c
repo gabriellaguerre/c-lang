@@ -185,10 +185,12 @@ ota_task_restart:
                 // Check if a connection was successfully accepted
                 if (rs485NewSock >= 0) {
                     UART_PRINT("[RS485 task] Successfully accepted a connection on RS485\n");
+                    GPIO_write(CONFIG_GPIO_RE_DE, 0); // Set RE/DE to receive mode
 
                     while (1) {
                         // Check for data from the antenna (RS485)
                         bytesAntenna = 0;
+                        bytesWifi = 0;
 
                         status = UART2_read(uart485Handle, buffer, BUFFER_SIZE, &bytesAntenna);
                         UART_PRINT("status: %d, bytesAntenna: %u\n", status, bytesAntenna);
@@ -203,17 +205,21 @@ ota_task_restart:
                             UART_PRINT("Received from antenna: %s\n", buffer);
 
                             //send bytesAntenna data over wifi
-                            sl_Recv(rs485NewSock, buffer, sizeof(buffer), 0);
+                            int bytesSentToWifi = sl_Send(rs485NewSock, buffer, bytesAntenna, 0);
+                            UART_PRINT("bytesSentToWifi: %d", bytesSentToWifi);
                         }
 
                         UART_PRINT("[RS485 task] bytesReceived: %d;  rs485Buffer: %d\n", bytesReceived, rs485Buffer);
 
-                        if (bytesReceived > 0) {
+                        if (bytesSentToWifi <  0) {
+                             UART_PRINT("Error sending data to TCP server\n");
+                             break;
+                        }
                             // Process the received RS485 data
-                            UART_PRINT("[RS485 task] Received from antenna: %s\n", rs485Buffer);
+                            UART_PRINT("Sent to TCP Server: %s\n", buffer);
 
-                            // Send data to the SmartDF app via Wi-Fi
-                            sendRS485Data(rs485Buffer, bytesReceived);
+                            // Send data from wifi to uart
+                        **** sendRS485Data(rs485Buffer, bytesReceived);
                             sl_Send(rs485NewSock, rs485DataBuffer, bytesRead, 0);
 
                             // Optionally send the same data back to the antenna via RS485

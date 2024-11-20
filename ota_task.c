@@ -185,31 +185,40 @@ ota_task_restart:
                 // Check if a connection was successfully accepted
                 if (rs485NewSock >= 0) {
                     UART_PRINT("[RS485 task] Successfully accepted a connection on RS485\n");
-                    GPIO_write(CONFIG_GPIO_RE_DE, 0); // Set RE/DE to receive mode
+                    // GPIO_write(CONFIG_GPIO_RE_DE, 0); // Set RE/DE to receive mode
 
                     while (1) {
                         // Check for data from the antenna (RS485)
                         bytesAntenna = 0;
                         bytesWifi = 0;
 
-                        status = UART2_read(uart485Handle, buffer, BUFFER_SIZE, &bytesAntenna);
-                        UART_PRINT("status: %d, bytesAntenna: %u\n", status, bytesAntenna);
+                        // status = UART2_read(uart485Handle, buffer, BUFFER_SIZE, &bytesAntenna);
+                        status = sl_Recv(rs485NewSock, buffer,BUFFER_SIZE, 0);
+                        UART_PRINT("status: %d, bytesWifi: %u\n", status, bytesWifi);
 
-                        if (status != UART2_STATUS_SUCCESS) {
-                            UART_PRINT("Error reading bytesRead\n");
-                            break;  // Exit loop on error
+                        if (status == 0) {
+                             // Client has disconnected
+                             UART_PRINT("[RS485 task] Client disconnected.\n");
+                             sl_Close(rs485NewSock);
+                             rs485NewSock = -1; // Reset the socket
+                             break; // Exit the loop and wait for a new connection
                         }
 
-                        if (bytesAntenna > 0) {
-                            buffer[bytesAntenna] = '\0';
-                            UART_PRINT("Received from antenna: %s\n", buffer);
-
-                            //send bytesAntenna data over wifi
-                            int bytesSentToWifi = sl_Send(rs485NewSock, buffer, bytesAntenna, 0);
-                            UART_PRINT("bytesSentToWifi: %d", bytesSentToWifi);
+                        if (status < 0>) {
+                             if (status == SL_ERROR_BSD_EAGAIN) {
+                                    // No data available in non-blocking mode, retry
+                                    continue;
+                                }
+                                UART_PRINT("Error receiving data from Wi-Fi: %d\n", status);
+                                break; // Exit loop on critical error
                         }
 
-                        UART_PRINT("[RS485 task] bytesReceived: %d;  rs485Buffer: %d\n", bytesReceived, rs485Buffer);
+                        if status > 0) {
+                            buffer[status] = '\0';
+                            UUART2_write(uartHandle, buffer, status, &bytesAntenna);
+                        }
+
+                        // UART_PRINT("[RS485 task] bytesReceived: %d;  rs485Buffer: %d\n", bytesReceived, rs485Buffer);
 
                         if (bytesSentToWifi <  0) {
                              UART_PRINT("Error sending data to TCP server\n");

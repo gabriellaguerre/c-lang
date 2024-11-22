@@ -225,7 +225,12 @@ ota_task_restart:
                             UART_PRINT("status2: %d", status2);
 
                             if(status2 > 0){
-                                
+                                rs485buffer[status2] = '\0';  // Null-terminate for printing
+
+                                //transmit device data to the antenna from the uart
+                                GPIO_write(CONFIG_GPIO_RE_DE, 1); // Set RE/DE to transmit mode
+                                usleep(100); // Stabilization delay
+                                UART2_write(uartRS485Handle, rs485buffer, status2, &bytesAntenna);
                             }
                         }
 

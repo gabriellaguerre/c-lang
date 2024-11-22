@@ -185,16 +185,16 @@ ota_task_restart:
                 // Check if a connection was successfully accepted
                 if (rs485NewSock >= 0) {
                     UART_PRINT("[RS485 task] Successfully accepted a connection on RS485\n");
-                    // GPIO_write(CONFIG_GPIO_RE_DE, 0); // Set RE/DE to receive mode
+                    GPIO_write(CONFIG_GPIO_RE_DE, 0); // Set RE/DE to receive mode
 
                     while (1) {
                         // Check for data from the antenna (RS485)
                         bytesAntenna = 0;
                         bytesWifi = 0;
 
-                        // status = UART2_read(uart485Handle, buffer, BUFFER_SIZE, &bytesAntenna);
-                        status = sl_Recv(rs485NewSock, buffer,BUFFER_SIZE, 0);
-                        UART_PRINT("status: %d, bytesWifi: %u\n", status, bytesWifi);
+                        status = UART2_read(uart485Handle, buffer, BUFFER_SIZE, &bytesAntenna);
+                        // status = sl_Recv(rs485NewSock, buffer,BUFFER_SIZE, 0);
+                        UART_PRINT("status: %d, bytesAntenna: %u\n", status, bytesAntenna);
 
                         if (status == 0) {
                              // Client has disconnected
@@ -213,9 +213,20 @@ ota_task_restart:
                                 break; // Exit loop on critical error
                         }
 
-                        if status > 0) {
+                        if (status > 0) {
                             buffer[status] = '\0';
-                            UUART2_write(uartHandle, buffer, status, &bytesAntenna);
+
+                            //Send antenna data over wifi to the connected device
+                            sl_Send(rs485NewSock, buffer, bytesAntenna, 0);
+                            // UUART2_write(uartHandle, buffer, status, &bytesAntenna);
+
+                            //Receive the connected device data over wifi
+                            status2 = sl_Recv(rs485NewSock, rs485buffer,BUFFER_SIZE, 0);
+                            UART_PRINT("status2: %d", status2);
+
+                            if(status2 > 0){
+                                
+                            }
                         }
 
                         // UART_PRINT("[RS485 task] bytesReceived: %d;  rs485Buffer: %d\n", bytesReceived, rs485Buffer);

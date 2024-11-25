@@ -185,12 +185,15 @@ ota_task_restart:
                 // Check if a connection was successfully accepted
                 if (rs485NewSock >= 0) {
                     UART_PRINT("[RS485 task] Successfully accepted a connection on RS485\n");
-                    GPIO_write(CONFIG_GPIO_RE_DE, 0); // Set RE/DE to receive mode
+
 
                     while (1) {
                         // Check for data from the antenna (RS485)
                         bytesAntenna = 0;
                         bytesWifi = 0;
+
+                        GPIO_write(CONFIG_GPIO_RE_DE, 0); // Set RE/DE to receive mode
+                        usleep(100); // Stabilization delay
 
                         status = UART2_read(uart485Handle, buffer, BUFFER_SIZE, &bytesAntenna);
                         // status = sl_Recv(rs485NewSock, buffer,BUFFER_SIZE, 0);
@@ -219,6 +222,7 @@ ota_task_restart:
                             //Send antenna data over wifi to the connected device
                             sl_Send(rs485NewSock, buffer, bytesAntenna, 0);
                             // UUART2_write(uartHandle, buffer, status, &bytesAntenna);
+                            usleep(100); // Stabilization delay
 
                             //Receive the connected device data over wifi
                             status2 = sl_Recv(rs485NewSock, rs485buffer,BUFFER_SIZE, 0);
@@ -236,17 +240,7 @@ ota_task_restart:
 
                         // UART_PRINT("[RS485 task] bytesReceived: %d;  rs485Buffer: %d\n", bytesReceived, rs485Buffer);
 
-                        if (bytesSentToWifi <  0) {
-                             UART_PRINT("Error sending data to TCP server\n");
-                             break;
-                        }
-                            // Process the received RS485 data
-                            UART_PRINT("Sent to TCP Server: %s\n", buffer);
-
-                            // Send data from wifi to uart
-                        **** sendRS485Data(rs485Buffer, bytesReceived);
-                            sl_Send(rs485NewSock, rs485DataBuffer, bytesRead, 0);
-
+ 
                             // Optionally send the same data back to the antenna via RS485
 //                            sendRS485Data(rs485Buffer, bytesReceived);
                         }

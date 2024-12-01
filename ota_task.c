@@ -96,6 +96,8 @@ extern UART2_Handle uartHandle;
 //*****************************************************************************
 #define BUFFER_SIZE 64
 char buffer[BUFFER_SIZE];
+char rs485buffer[BUFFER_SIZE];
+char hexBuffer[BUFFER_SIZE];
 
 int32_t status;
 int32_t status2;
@@ -193,11 +195,16 @@ ota_task_restart:
                         bytesWifi = 0;
 
                         GPIO_write(CONFIG_GPIO_RE_DE, 0); // Set RE/DE to receive mode
-                        usleep(100); // Stabilization delay
+                        // usleep(100); // Stabilization delay
 
                         status = UART2_read(uart485Handle, buffer, BUFFER_SIZE, &bytesAntenna);
+                        buffer[bytesAntenna] = '\0'; // Null-terminate after reading
+                        UART_PRINT("status: %d ..... bytesAntenna: %u ...... buffer: %s \n", status, bytesAntenna, buffer);
+
+                        convertToHex(buffer, hexBuffer, BUFFER_SIZE);
+                        UART_PRINT("Converted to Hex: %s\n", hexBuffer);
                         // status = sl_Recv(rs485NewSock, buffer,BUFFER_SIZE, 0);
-                        UART_PRINT("status: %d, bytesAntenna: %u\n", status, bytesAntenna);
+
 
                         if (status == 0) {
                              // Client has disconnected
@@ -240,7 +247,7 @@ ota_task_restart:
 
                         // UART_PRINT("[RS485 task] bytesReceived: %d;  rs485Buffer: %d\n", bytesReceived, rs485Buffer);
 
- 
+
                             // Optionally send the same data back to the antenna via RS485
 //                            sendRS485Data(rs485Buffer, bytesReceived);
                         }
@@ -319,4 +326,22 @@ ota_task_restart:
             }
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ RS485 data reception ends ++++++++++++++++++++++++++++++++++++
             }
+
+
+
+// Function to convert characters to hexadecimal
+void convertToHex(const char *input, char *hexBuffer, size_t hexBufferSize) {
+    size_t inputLen = strlen(input);
+    size_t hexLen = inputLen * 2;
+
+    if (hexLen + 1 > hexBufferSize) {
+        UART_PRINT("Hex buffer too small!\n");
+        return;
     }
+
+    size_t index = 0;
+    for (size_t i = 0; i < inputLen; i++) {
+        index += snprintf(hexBuffer + index, 3, "%02X", (unsigned char)input[i]);
+    }
+    hexBuffer[hexLen] = '\0'; // Null-terminate the hex string
+}

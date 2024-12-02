@@ -194,6 +194,10 @@ ota_task_restart:
                         bytesAntenna = 0;
                         bytesWifi = 0;
 
+                        //clearing buffers before reads
+                        memset(buffer, 0, BUFFER_SIZE); // Clear the buffer before each read
+                        memset(hexBuffer, 0, HEX_BUFFER_SIZE); // Clear hex buffer
+
                         GPIO_write(CONFIG_GPIO_RE_DE, 0); // Set RE/DE to receive mode
                         // usleep(100); // Stabilization delay
 

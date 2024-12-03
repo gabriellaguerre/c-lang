@@ -196,7 +196,7 @@ ota_task_restart:
 
                         //clearing buffers before reads
                         memset(buffer, 0, BUFFER_SIZE); // Clear the buffer before each read
-                        memset(hexBuffer, 0, HEX_BUFFER_SIZE); // Clear hex buffer
+
 
                         GPIO_write(CONFIG_GPIO_RE_DE, 0); // Set RE/DE to receive mode
                         // usleep(100); // Stabilization delay
@@ -204,10 +204,6 @@ ota_task_restart:
                         status = UART2_read(uart485Handle, buffer, BUFFER_SIZE, &bytesAntenna);
                         buffer[bytesAntenna] = '\0'; // Null-terminate after reading
                         UART_PRINT("status: %d ..... bytesAntenna: %u ...... buffer: %s \n", status, bytesAntenna, buffer);
-
-                        convertToHex(buffer, hexBuffer, BUFFER_SIZE);
-                        UART_PRINT("Converted to Hex: %s\n", hexBuffer);
-                        // status = sl_Recv(rs485NewSock, buffer,BUFFER_SIZE, 0);
 
 
                         if (status == 0) {
@@ -249,11 +245,6 @@ ota_task_restart:
                             }
                         }
 
-                        // UART_PRINT("[RS485 task] bytesReceived: %d;  rs485Buffer: %d\n", bytesReceived, rs485Buffer);
-
-
-                            // Optionally send the same data back to the antenna via RS485
-//                            sendRS485Data(rs485Buffer, bytesReceived);
                         }
 
 
@@ -331,21 +322,3 @@ ota_task_restart:
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ RS485 data reception ends ++++++++++++++++++++++++++++++++++++
             }
 
-
-
-// Function to convert characters to hexadecimal
-void convertToHex(const char *input, char *hexBuffer, size_t hexBufferSize) {
-    size_t inputLen = strlen(input);
-    size_t hexLen = inputLen * 2;
-
-    if (hexLen + 1 > hexBufferSize) {
-        UART_PRINT("Hex buffer too small!\n");
-        return;
-    }
-
-    size_t index = 0;
-    for (size_t i = 0; i < inputLen; i++) {
-        index += snprintf(hexBuffer + index, 3, "%02X", (unsigned char)input[i]);
-    }
-    hexBuffer[hexLen] = '\0'; // Null-terminate the hex string
-}

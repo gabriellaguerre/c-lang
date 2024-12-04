@@ -240,7 +240,7 @@ ota_task_restart:
 
                                 //transmit device data to the antenna from the uart
                                 GPIO_write(CONFIG_GPIO_RE_DE, 1); // Set RE/DE to transmit mode
-                                usleep(100); // Stabilization delay
+                                // usleep(100); // Stabilization delay
                                 UART2_write(uartRS485Handle, rs485buffer, status2, &bytesAntenna);
                             }
                         }
@@ -260,7 +260,7 @@ ota_task_restart:
                         sl_Send(rs485NewSock, rs485DataBuffer, bytesRead, 0);
                     } else if (bytesRead485 == SL_ERROR_BSD_EAGAIN) {
                         // No data available, continue listening
-                        usleep(RS485_NB_TIMEOUT * 1000);
+                        // usleep(RS485_NB_TIMEOUT * 1000);
                     } else {
                         UART_PRINT("[RS485 task] Error receiving data, closing connection\n");
                         sl_Close(rs485NewSock); // Close the socket on error
@@ -321,4 +321,3 @@ ota_task_restart:
             }
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ RS485 data reception ends ++++++++++++++++++++++++++++++++++++
             }
-

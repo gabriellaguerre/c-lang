@@ -28,9 +28,6 @@ void initAnt() {
         // UART2_open() failed
        UART_PRINT("UART2_open failed\n");
         while (1);
-    } else {
-        UART_PRINT("UART2_open succeeded\n");
-        
     }
 }
 
@@ -38,57 +35,4 @@ void initAnt() {
 void closeUART() {
     // Close the UART
     UART2_close(uartRS485Handle);
-}
-
-
-void sendRS485Data(const char *data, size_t dataSize) {
-    // Set DE high to enable transmission mode
-    GPIO_write(6, 1);
-
-    // Transmit data over UART
-    UART2_write(uartRS485Handle, data, dataSize, NULL);
-
-    // After transmission, set DE low to enable reception mode
-    GPIO_write(6, 0);
-}
-
-
-void receiveAntennaData() {
-
-    UART_PRINT("Receiving data from antenna...\n");
-    int bytesRead;
-    int bytesWritten;
-    GPIO_write(CONFIG_GPIO_RE_DE, 0);  // Set to receive mode
-
-    while (1) {
-
-        bytesRead = 0;
-        while (bytesRead == 0) {
-            status = UART2_read(uartRS485Handle, buffer, BUFFER_SIZE, &bytesRead);
-            UART_PRINT("status: %d, bytesRead: %u\n", status, bytesRead);
-
-        if(status != UART2_STATUS_SUCCESS) {
-                UART_PRINT("error reading bytesRead");
-                break;
-            }
-
-        }
-        if (bytesRead > 0) {
-            buffer[bytesRead] = '\0';
-            UART_PRINT("Received from antenna: %s\n, buffer");
-
-            bytesWritten = 0;
-            GPIO_write(CONFIG_GPIO_RE_DE, 1);  // Set to transmit mode
-            status2 = UART2_write(uartRS485Handle, buffer, BUFFER_SIZE, &bytesWritten);
-            UART_PRINT("status2: %d, bytesWritten: %d\n", status2, bytesWritten);
-             GPIO_write(CONFIG_GPIO_RE_DE, 0);  // Set back to receive mode
-
-            if(status2 != UART2_STATUS_SUCCESS) {
-                UART_PRINT("error reading bytesRead");
-                break;
-           }
-
-        }
-
-    }
 }

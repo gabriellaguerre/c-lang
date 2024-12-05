@@ -281,43 +281,5 @@ ota_task_restart:
                     }
                 }
             }
-// ++++++++++++++++++++++++++++++++++++++++ RS485 client accept ends +++++++++++++++++++++++++++++++++++++++++++++++++
-
-
-// +++++++++++++++++++++++++++++++++++++++++++++++++ RS485 data reception +++++++++++++++++++++++++++++++++++++++++++++++++++++++
-               status = sl_Recv(rs485NewSock, rs485DataBuffer, sizeof(rs485DataBuffer), 0);
-               if(status > 0)
-               {
-                   UART2_write(uartRS485Handle, rs485DataBuffer, status, NULL);
-                   int bytesRead = UART2_read(uartRS485Handle, rs485DataBuffer, sizeof(rs485DataBuffer), NULL);
-                   if (bytesRead > 0)
-                   {
-                       sl_Send(rs485NewSock, rs485DataBuffer, bytesRead, 0);
-                   }
-               }
-               else if(status < 0)
-               {
-                   sl_Close(rs485NewSock);
-                   goto ota_task_accept_start;
-               }
-                while (1) {
-                    status = sl_Recv(rs485NewSock, rs485DataBuffer, sizeof(rs485DataBuffer), 0);
-                    if (status > 0) {
-                        UART2_write(uartRS485Handle, rs485DataBuffer, status, NULL);
-                        int bytesRead = UART2_read(uartRS485Handle, rs485DataBuffer, sizeof(rs485DataBuffer), NULL);
-                        if (bytesRead > 0) {
-                            sl_Send(rs485NewSock, rs485DataBuffer, bytesRead, 0);
-                        }
-                    } else if (status == SL_ERROR_BSD_EAGAIN) {
-                        // No data received, continue listening
-                        usleep(RS485_NB_TIMEOUT * 1000);  // Small delay before retrying
-                        continue;
-                    } else {
-                        // Handle other error cases, but do NOT close the socket
-                        UART_PRINT("[RS485 task] Error receiving data, continuing to listen...\n\r");
-                        continue;
-                    }
-                }
-            }
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ RS485 data reception ends ++++++++++++++++++++++++++++++++++++
-            }
+       }
+}

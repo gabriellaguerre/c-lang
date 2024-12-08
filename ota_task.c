@@ -214,7 +214,7 @@ ota_task_restart:
                              break; // Exit the loop and wait for a new connection
                         }
 
-                        if (status < 0>) {
+                        if (status < 0) {
                              if (status == SL_ERROR_BSD_EAGAIN) {
                                     // No data available in non-blocking mode, retry
                                     continue;
@@ -231,21 +231,27 @@ ota_task_restart:
                             // UUART2_write(uartHandle, buffer, status, &bytesAntenna);
                             usleep(100); // Stabilization delay
 
-                            //Receive the connected device data over wifi
-                            status2 = sl_Recv(rs485NewSock, rs485buffer,BUFFER_SIZE, 0);
-                            UART_PRINT("status2: %d", status2);
+                            while (1) {
+                                //Receive the connected device data over wifi
+                                status2 = sl_Recv(rs485NewSock, rs485buffer,BUFFER_SIZE, 0);
+                                if(status2 > 0){
+                                    messageLength = rs485buffer[1];
 
-                            if(status2 > 0){
-                                rs485buffer[status2] = '\0';  // Null-terminate for printing
+                                    if (status2 >= messageLength) {
+                                        rs485buffer[bytesSentToUart] = '\0';  // Null-terminate for printing
+                                        //transmit device data to the antenna from the uart
+                                        GPIO_write(CONFIG_GPIO_RE_DE, 1); // Set RE/DE to transmit mode
+                                        usleep(100);
+                                        UART2_write(uartRS485Handle, rs485buffer, status2, &bytesAntenna);
 
-                                //transmit device data to the antenna from the uart
-                                GPIO_write(CONFIG_GPIO_RE_DE, 1); // Set RE/DE to transmit mode
-                                // usleep(100); // Stabilization delay
-                                UART2_write(uartRS485Handle, rs485buffer, status2, &bytesAntenna);
+                                    }
+                                }
                             }
-                        }
 
                         }
+                    }
+
+                }
 
 
                     // Continue to listen for incoming connections on the UART side

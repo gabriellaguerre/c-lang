@@ -203,7 +203,7 @@ ota_task_restart:
 
                         status = UART2_read(uart485Handle, buffer, BUFFER_SIZE, &bytesFromAntenna);
                         buffer[bytesAntenna] = '\0'; // Null-terminate after reading
-                        UART_PRINT("status: %d ..... bytesAntenna: %u ...... buffer: %s \n", status, bytesAntenna, buffer);
+                        UART_PRINT("status: %d ..... bytesAntenna: %u ...... buffer: %s \n", status, bytesFromAntenna, buffer);
 
 
                         if (status == 0) {
@@ -247,11 +247,20 @@ ota_task_restart:
                                            //transmit device data to the antenna from the uart
                                            GPIO_write(CONFIG_GPIO_RE_DE, 1); // Set RE/DE to transmit mode
                                            usleep(100);
-                                           UART2_write(uartRS485Handle, rs485buffer, bytesSentToUart, &bytesAntenna);
+                                           UART2_write(uartRS485Handle, rs485buffer, bytesSentToUart, &bytesFromAntenna);
                                            usleep(RESPONSE_DELAY_MS * 1000); // Wait for Antenna Unit response (20-50ms)
                                             //open the transceiver to receive antenna data
                                            GPIO_write(CONFIG_GPIO_RE_DE, 0); // Set RE/DE to receive mode
                                            UART2_read(uartRS485Handle, buffer, BUFFER_SIZE, &bytesFromAntenna);
+
+                                           if(bytesFromAntenna > 0 && buffer[0] != '\0') {
+                                            messageLength = buffer[1];
+                                            UART_PRINT("\rMessage Length from ANTENNA: %d\n", messageLength);
+                                            buffer[bytesFromAntenna] = '\0';  // Null-terminate for printing
+
+
+
+                                           }
                                     }
                                 }
                             }

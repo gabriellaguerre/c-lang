@@ -243,6 +243,7 @@ ota_task_restart:
                                         messageLength = rs485buffer[1];
 
                                         if (bytesSentToUart == messageLength) {
+
                                            rs485buffer[bytesSentToUart] = '\0';  // Null-terminate for printing
                                            //transmit device data to the antenna from the uart
                                            GPIO_write(CONFIG_GPIO_RE_DE, 1); // Set RE/DE to transmit mode
@@ -258,21 +259,16 @@ ota_task_restart:
                                             UART_PRINT("\rMessage Length from ANTENNA: %d\n", messageLength);
                                             buffer[bytesFromAntenna] = '\0';  // Null-terminate for printing
 
+                                            bytesSentToWifi = sl_Send(rs485NewSock, buffer, bytesFromAntenna, 0);
+                                            UART_PRINT("\rline267 -> bytesFromAntenna: %d ..... buffer: %s .... bytesSentToWifi\n", bytesFromAntenna, buffer, bytesSentToWifi);
 
 
                                            }
-                                    }
+                                        }
                                 }
                             }
 
-                            }
-
                         }
-                    }
-
-                }
-
-
                     // Continue to listen for incoming connections on the UART side
                     bytesRead485 = sl_Recv(rs485NewSock, buffer, sizeof(buffer), 0);
                     UART_PRINT("[RS485 task] bytesRead value: %d\n", bytesRead485);

@@ -260,33 +260,34 @@ ota_task_restart:
                                             buffer[bytesFromAntenna] = '\0';  // Null-terminate for printing
 
                                             bytesSentToWifi = sl_Send(rs485NewSock, buffer, bytesFromAntenna, 0);
-                                            UART_PRINT("\rline267 -> bytesFromAntenna: %d ..... buffer: %s .... bytesSentToWifi\n", bytesFromAntenna, buffer, bytesSentToWifi);
+                                            UART_PRINT("\rline263 -> bytesFromAntenna: %d ..... buffer: %s .... bytesSentToWifi\n", bytesFromAntenna, buffer, bytesSentToWifi);
 
 
                                            }
                                         }
                                 }
+                                usleep((COMMAND_INTERVAL_MS - RESPONSE_DELAY_MS) * 1000); // Maintain 250ms cycle
                             }
 
                         }
-                    // Continue to listen for incoming connections on the UART side
-                    bytesRead485 = sl_Recv(rs485NewSock, buffer, sizeof(buffer), 0);
-                    UART_PRINT("[RS485 task] bytesRead value: %d\n", bytesRead485);
+                    // // Continue to listen for incoming connections on the UART side
+                    // bytesRead485 = sl_Recv(rs485NewSock, buffer, sizeof(buffer), 0);
+                    // UART_PRINT("[RS485 task] bytesRead value: %d\n", bytesRead485);
 
-                    if (bytesRead485 > 0) {
-                        UART_PRINT("[RS485 task] Received data: %s\n", buffer);
+                    // if (bytesRead485 > 0) {
+                    //     UART_PRINT("[RS485 task] Received data: %s\n", buffer);
 
-                         // Process the received data
-                        // sendRS485Data(buffer, bytesRead485); // Echo back or process the data
-                        sl_Send(rs485NewSock, rs485DataBuffer, bytesRead, 0);
-                    } else if (bytesRead485 == SL_ERROR_BSD_EAGAIN) {
-                        // No data available, continue listening
-                        // usleep(RS485_NB_TIMEOUT * 1000);
-                    } else {
-                        UART_PRINT("[RS485 task] Error receiving data, closing connection\n");
-                        sl_Close(rs485NewSock); // Close the socket on error
-                        break;
-                    }
+                    //      // Process the received data
+                    //     // sendRS485Data(buffer, bytesRead485); // Echo back or process the data
+                    //     sl_Send(rs485NewSock, rs485DataBuffer, bytesRead, 0);
+                    // } else if (bytesRead485 == SL_ERROR_BSD_EAGAIN) {
+                    //     // No data available, continue listening
+                    //     // usleep(RS485_NB_TIMEOUT * 1000);
+                    // } else {
+                    //     UART_PRINT("[RS485 task] Error receiving data, closing connection\n");
+                    //     sl_Close(rs485NewSock); // Close the socket on error
+                    //     break;
+                    // }
                 }
              } else {
                 UART_PRINT("[RS485 task] Error accepting RS485 client connection: %d\n", rs485NewSock);

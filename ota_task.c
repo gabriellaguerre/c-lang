@@ -252,6 +252,7 @@ ota_task_restart:
                                            usleep(RESPONSE_DELAY_MS * 1000); // Wait for Antenna Unit response (20-50ms)
                                             //open the transceiver to receive antenna data
                                            GPIO_write(CONFIG_GPIO_RE_DE, 0); // Set RE/DE to receive mode
+                                           usleep(100);
                                            UART2_read(uartRS485Handle, buffer, BUFFER_SIZE, &bytesFromAntenna);
 
                                            if(bytesFromAntenna > 0 && buffer[0] != '\0') {

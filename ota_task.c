@@ -179,10 +179,8 @@ ota_task_restart:
             UART_PRINT("rs485NewSock value: %d", rs485NewSock);
             while(rs485NewSock < 0)
             {
-                UART_PRINT("Attempting to accept RS485 connection with rs485Sock value: %d \n", rs485Sock);
-                rs485NewSock = sl_Accept(rs485Sock, (struct SlSockAddr_t *)&sAddr, (SlSocklen_t *)&addrSize);
-                UART_PRINT("After sl_Accept, rs485NewSock: %d\n", rs485NewSock);
 
+                rs485NewSock = sl_Accept(rs485Sock, (struct SlSockAddr_t *)&sAddr, (SlSocklen_t *)&addrSize);
 
                 // Check if a connection was successfully accepted
                 if (rs485NewSock >= 0) {
@@ -196,7 +194,7 @@ ota_task_restart:
 
                         //clearing buffers before reads
                         memset(buffer, 0, BUFFER_SIZE); // Clear the buffer before each read
-                        // memset(hexBuffer, 0, BUFFER_SIZE); // Clear hex buffer
+
 
                         GPIO_write(CONFIG_GPIO_RE_DE, 0); // Set RE/DE to receive mode
                         usleep(100); // Stabilization delay
@@ -227,12 +225,11 @@ ota_task_restart:
                             buffer[status] = '\0';
 
                             //Send antenna data over wifi to the connected device
-                            // sl_Send(rs485NewSock, buffer, bytesAntenna, 0);
                             bytesSentToWifi = sl_Send(rs485NewSock, buffer, bytesFromAntenna, 0);
-                            // UUART2_write(uartHandle, buffer, status, &bytesAntenna);
+
                             while (1) {
                                 bytesSentToUart = sl_Recv(rs485NewSock, rs485buffer,BUFFER_SIZE, 0);
-                                // usleep(100); // Stabilization delay
+
                                 if (bytesSentToWifi < 0) {
                                     sl_Close(rs485NewSock);
                                     rs485NewSock = -1;
@@ -245,12 +242,14 @@ ota_task_restart:
                                         if (bytesSentToUart == messageLength) {
 
                                            rs485buffer[bytesSentToUart] = '\0';  // Null-terminate for printing
+
                                            //transmit device data to the antenna from the uart
                                            GPIO_write(CONFIG_GPIO_RE_DE, 1); // Set RE/DE to transmit mode
                                            usleep(100);
                                            UART2_write(uartRS485Handle, rs485buffer, bytesSentToUart, &bytesFromAntenna);
                                            usleep(RESPONSE_DELAY_MS * 1000); // Wait for Antenna Unit response (20-50ms)
-                                            //open the transceiver to receive antenna data
+
+                                           //open the transceiver to receive antenna data
                                            GPIO_write(CONFIG_GPIO_RE_DE, 0); // Set RE/DE to receive mode
                                            usleep(100);
                                            UART2_read(uartRS485Handle, buffer, BUFFER_SIZE, &bytesFromAntenna);
@@ -262,7 +261,6 @@ ota_task_restart:
 
                                             bytesSentToWifi = sl_Send(rs485NewSock, buffer, bytesFromAntenna, 0);
                                             UART_PRINT("\rline263 -> bytesFromAntenna: %d ..... buffer: %s .... bytesSentToWifi\n", bytesFromAntenna, buffer, bytesSentToWifi);
-
 
                                            }
                                         }

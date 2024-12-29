@@ -222,12 +222,31 @@ ota_task_restart:
                         }
 
                         if (status > 0 && buffer[0] != '\0') {
-                            buffer[status] = '\0';
 
-                            //Send antenna data over wifi to the connected device
-                            bytesSentToWifi = sl_Send(rs485NewSock, buffer, bytesFromAntenna, 0);
+                            messageLength = buffer[1]; // Byte 1 indicates the message length
+                            buffer[messageLength] = '\0'; // Null-terminate after reading
+                            UART_PRINT("\rline 228 -> bytesFromAntenna: %d ... messageLength: %d\n", bytesFromAntenna, messageLength);
 
-                            while (1) {
+                            if (bytesFromAntenna >= messageLength) {
+                                UART_PRINT("Received from Antenna: %.*s\n", messageLength, buffer);
+
+                                while (1) {
+                                    size_t filteredLength = filterTrailingZeroes(buffer, bytesFromAntenna);
+                                    messageLength = buffer[1];
+                                    buffer[messageLength] = '\0';
+
+                                    //Send antenna data over wifi to the connected device
+                                    bytesSentToWifi = sl_Send(rs485NewSock, buffer, filteredLength, 0);
+                                    UART_PRINT("\rline 240 -> bytesSentToWifi: %d ... messageLength: %d ... filteredLength: %d\n", bytesSentToWifi, messageLength, filteredLength);
+
+                                    // Convert sent data to hex and print
+                                    memset(hexBuffer, 0, BUFFER_SIZE);
+                                }
+
+                            }
+
+
+
                                 bytesSentToUart = sl_Recv(rs485NewSock, rs485buffer,BUFFER_SIZE, 0);
 
                                 if (bytesSentToWifi < 0) {

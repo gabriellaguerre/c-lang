@@ -241,6 +241,14 @@ ota_task_restart:
 
                                     // Convert sent data to hex and print
                                     memset(hexBuffer, 0, BUFFER_SIZE);
+                                    convertToHex(buffer, hexBuffer, filteredLength);
+                                    UART_PRINT("\rHex sent to Wi-Fi: %s\n", hexBuffer);
+
+                                    if (bytesSentToWifi < 0) {
+                                    UART_PRINT("Error sending to Wi-Fi client.\n");
+                                    break;
+                                    }
+
                                 }
 
                             }
@@ -322,4 +330,20 @@ ota_task_restart:
                 }
             }
        }
+}
+
+// Function to convert a buffer to hex representation
+void convertToHex(const char *input, char *hexBuffer, size_t inputLength) {
+    for (size_t i = 0; i < inputLength; i++) {
+        snprintf(hexBuffer + (i * 2), 3, "%02X", (unsigned char)input[i]);
+    }
+}
+
+// Function to filter out trailing zeroes
+size_t filterTrailingZeroes(char *input, size_t length) {
+    size_t actualLength = length;
+    while (actualLength > 0 && input[actualLength - 1] == 0) {
+        actualLength--; // Reduce length for trailing zero
+    }
+    return actualLength;
 }

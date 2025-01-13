@@ -249,6 +249,14 @@ ota_task_restart:
                                     break;
                                     }
 
+                                     memset(rs485Buffer, 0, BUFFER_SIZE);
+                                     bytesReceivedFromWifi = sl_Recv(rs485NewSock, rs485Buffer, BUFFER_SIZE, 0);
+                                     UART_PRINT("\rline 254 -> bytesReceivedFromWifi: %d\n", bytesReceivedFromWifi);
+
+                                    if (bytesReceivedFromWifi > 1 && rs485Buffer[0] != '\0') {
+                                         messageLength = rs485Buffer[1];
+                                         rs485Buffer[messageLength] = '\0'; // Null-terminate after reading
+
                                 }
 
                             }

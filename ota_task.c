@@ -256,6 +256,12 @@ ota_task_restart:
                                     if (bytesReceivedFromWifi > 1 && rs485Buffer[0] != '\0') {
                                          messageLength = rs485Buffer[1];
                                          rs485Buffer[messageLength] = '\0'; // Null-terminate after reading
+                                         UART_PRINT("\rline 261 -> bytesReceivedFromWifi: %d ... messageLength: %d\n", bytesReceivedFromWifi, messageLength);
+
+                                          memset(hexBuffer, 0, BUFFER_SIZE);
+                                          convertToHex(rs485Buffer, hexBuffer, messageLength);
+                                          UART_PRINT("\rHex received from Wi-Fi: %s\n", hexBuffer);
+                                          
 
                                 }
 

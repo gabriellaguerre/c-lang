@@ -261,7 +261,15 @@ ota_task_restart:
                                           memset(hexBuffer, 0, BUFFER_SIZE);
                                           convertToHex(rs485Buffer, hexBuffer, messageLength);
                                           UART_PRINT("\rHex received from Wi-Fi: %s\n", hexBuffer);
-                                          
+
+                                           if (bytesReceivedFromWifi >= messageLength) {
+                                              UART_PRINT("\rReceived from Wi-Fi: %.*s\n",rs485Buffer);
+
+                                              // Send to RS485 (UART)
+                                              GPIO_write(CONFIG_GPIO_RE_DE, 1); // Set RE/DE to transmit mode
+                                              usleep(100);
+                                              UART2_write(uartRS485Handle, rs485Buffer, messageLength, &bytesToAntenna);
+
 
                                 }
 

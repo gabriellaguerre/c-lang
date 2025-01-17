@@ -269,7 +269,12 @@ ota_task_restart:
                                               GPIO_write(CONFIG_GPIO_RE_DE, 1); // Set RE/DE to transmit mode
                                               usleep(100);
                                               UART2_write(uartRS485Handle, rs485Buffer, messageLength, &bytesToAntenna);
+                                              usleep(100);
 
+                                              GPIO_write(CONFIG_GPIO_RE_DE, 0); // Set RE/DE to receive mode
+                                              usleep(100);
+                                              memset(buffer, 0, BUFFER_SIZE);
+                                              UART2_read(uartRS485Handle, buffer, BUFFER_SIZE, &bytesFromAntenna);
 
                                 }
 
